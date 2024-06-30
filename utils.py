@@ -49,7 +49,12 @@ def adjust_pixel_values(img, pixel_size):
     scale_factor = pixel_size / target_pixel_size
     img = (img / scale_factor).astype(np.uint8)
     return img
-
+def load_bids_image(image_path, pixel_size_metadata=None):
+    """Loads a BIDS-formatted image and adjusts pixel values if needed."""
+    img = cv2.imread(image_path)
+    if pixel_size_metadata:
+        img = adjust_pixel_values(img, pixel_size_metadata)
+    return img
 def resize_and_pad(img, target_size=(416, 416)):
     """Resizes an image while maintaining aspect ratio and pads to target size."""
     old_size = img.shape[:2]
