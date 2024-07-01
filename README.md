@@ -34,9 +34,11 @@ This project focuses on preprocessing and segmenting axons and myelin from micro
    pip install -r requirements.txt
 
 ### Running preprocessing script
-    ```bash
+   ```bash
    cd src
-   python preprocessing.py
+   ```bash
+   python  preprocessing.py
+
 
    
 
