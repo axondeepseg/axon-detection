@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import json
+from skimage import filters, measure
+from skimage.morphology import remove_small_objects
 
 def load_bids_images(data_path):
     """Loads a BIDS-formatted dataset and index it into a dictionary"""
@@ -70,3 +72,32 @@ def resize_and_pad(img, target_size=(416, 416)):
 
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
     return img
+
+def normalize_and_window(img):
+    """Normalizes and applies intensity windowing to an image."""
+    img = (img - img.min()) / (img.max() - img.min())  # Normalize to [0, 1]
+    low_percentile, high_percentile = np.percentile(img, (2, 98))
+    img = np.clip(img, low_percentile, high_percentile)
+    img = (img - img.min()) / (img.max() - img.min())  # Renormalize
+    img = (img * 255).astype(np.uint8)  # Scale to [0, 255]
+    return img
+
+def threshold_and_find_regions(img):
+    """Thresholds an image and finds connected regions."""
+    thresh = filters.threshold_otsu(img)  # Otsu thresholding
+    binary = img > thresh
+    binary = remove_small_objects(binary, 20)  # Remove small artifacts
+    regions = measure.regionprops(binary.astype(int))
+    if len(regions) == 0:
+        print("No regions found!")
+    return regions
+
+def crop_and_resize(img, region, target_size=(416, 416)):
+    """Crops an image around a region and resizes it."""
+    if region.area == 0:
+        print("Region area is zero!")
+        return np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8)  # Return a black image
+
+    minr, minc, maxr, maxc = region.bbox
+    cropped_img = img[minr:maxr, minc:maxc]
+    return resize_and_pad(cropped_img, target_size)
