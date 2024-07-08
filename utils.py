@@ -82,14 +82,23 @@ def normalize_and_window(img):
     img = (img * 255).astype(np.uint8)  # Scale to [0, 255]
     return img
 
-def threshold_and_find_regions(img):
-    """Thresholds an image and finds connected regions."""
-    thresh = filters.threshold_otsu(img)  # Otsu thresholding
-    binary = img > thresh
-    binary = remove_small_objects(binary, 20)  # Remove small artifacts
-    regions = measure.regionprops(binary.astype(int))
+
+def find_regions(img):
+    """Finds connected regions directly from a binary segmentation mask."""
+    # Ensure the image is of integer type for labeling
+    img = img.astype(int)
+
+    # # Remove small objects
+    # img = remove_small_objects(img, 20)
+
+    # Label connected regions
+    labeled_img = measure.label(img)
+
+    # Extract region properties
+    regions = measure.regionprops(labeled_img)
     if len(regions) == 0:
         print("No regions found!")
+
     return regions
 
 def crop_and_resize(img, region, target_size=(416, 416)):

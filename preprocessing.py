@@ -7,16 +7,13 @@ import cv2
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-def preprocess_data(target_size=(416, 416)):
+def preprocess_data():
     """Preprocesses the loaded BIDS data for object detection.
 
-    Args:
-        data_dict: A dictionary containing image and segmentation paths.
-        target_size: Tuple specifying the desired output image size.
     Steps:
     1. Load
     2. Normalize + windowing
-    3. Threshold + find regions axons Use skimage.measures.regionprops()
+    3. find regions axons Use skimage.measures.regionprops()
     4. Croping + Resizing
     """
     data_repo_url = "https://github.com/axondeepseg/data_axondeepseg_sem"
@@ -50,34 +47,25 @@ def preprocess_data(target_size=(416, 416)):
             img = utils.normalize_and_window(img)
 
             # Load segmentation masks and resize (maintaining aspect ratio, potentially adding padding)
-
-            axon_seg_regions = utils.threshold_and_find_regions(cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE))
+            # Load segmentation masks and find regions
+            axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
+            axon_seg_regions = utils.find_regions(axon_seg)
             for i, region in enumerate(axon_seg_regions):
-                cropped_img = utils.crop_and_resize(img, region, target_size)
-                image_name = f"{subject}_{sample}_axon_{i}.png"
-                cv2.imwrite(os.path.join(processed_images_dir, image_name), cropped_img)
-                bbox_data.append({"image_name": image_name, "xmin": region.bbox[1], "ymin": region.bbox[0], "xmax": region.bbox[3], "ymax": region.bbox[2], "class":"axon"})
+                minr, minc, maxr, maxc = region.bbox
+                cv2.rectangle(img, (minc, minr), (maxc, maxr), (255, 0, 0), 2)  # Blue rectangle for axon
+                bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxc, "ymax": maxr, "class": "axon"})
 
-            #Process Myelin
-            myelin_seg_regions = utils.threshold_and_find_regions(
-                cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
-            )
+            # Process Myelin
+            myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
+            myelin_seg_regions = utils.find_regions(myelin_seg)
             for i, region in enumerate(myelin_seg_regions):
-                cropped_img = utils.crop_and_resize(img, region, target_size)
+                minr, minc, maxr, maxc = region.bbox
+                cv2.rectangle(img, (minc, minr), (maxc, maxr), (0, 255, 0), 2)  # Green rectangle for myelin
+                bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxr, "ymax": maxc, "class": "myelin"})
 
-                image_name = f"{subject}_{sample}_myelin_{i}.png"
-                cv2.imwrite(os.path.join(processed_images_dir, image_name), cropped_img)
-                bbox_data.append({
-                    "image_name": image_name,
-                    "xmin": region.bbox[1],
-                    "ymin": region.bbox[0],
-                    "xmax": region.bbox[3],
-                    "ymax": region.bbox[2],
-                    "class": "myelin"
-                })
-
-        df = pd.DataFrame(bbox_data)
-        df.to_csv(os.path.join(processed_images_dir, 'annotations.csv'), index=False)
+            # Save the image with bounding boxes
+            image_name = f"{subject}_{sample}.png"
+            cv2.imwrite(os.path.join(processed_images_dir, image_name), img)
 
 def visualize_processed_images():
     # Path to your processed images directory
@@ -98,7 +86,8 @@ def visualize_processed_images():
         xmin, ymin, xmax, ymax = row["xmin"], row["ymin"], row["xmax"], row["ymax"]
 
         # Draw bounding box on image
-        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)  # Green rectangle
+        color = (0, 255, 0) if row["class"] == "myelin" else (255, 0, 0)
+        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), color, 2)
 
         # Display image
         plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convert BGR to RGB for matplotlib
