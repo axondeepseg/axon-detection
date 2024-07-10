@@ -4,7 +4,6 @@ import pandas as pd
 from pathlib import Path
 import json
 from skimage import filters, measure
-from skimage.morphology import remove_small_objects
 
 def load_bids_images(data_path):
     """Loads a BIDS-formatted dataset and index it into a dictionary"""
@@ -87,9 +86,6 @@ def find_regions(img):
     """Finds connected regions directly from a binary segmentation mask."""
     # Ensure the image is of integer type for labeling
     img = img.astype(int)
-
-    # # Remove small objects
-    # img = remove_small_objects(img, 20)
 
     # Label connected regions
     labeled_img = measure.label(img)

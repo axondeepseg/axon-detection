@@ -1,12 +1,7 @@
-import cv2
 import subprocess
-import os
 import utils
-import numpy as np
 import cv2
 import os
-import pandas as pd
-import matplotlib.pyplot as plt
 def preprocess_data():
     """Preprocesses the loaded BIDS data for object detection.
 
@@ -16,11 +11,12 @@ def preprocess_data():
     3. find regions axons Use skimage.measures.regionprops()
     4. Croping + Resizing
     """
+
+    # TODO: Issue of raw path
     data_repo_url = "https://github.com/axondeepseg/data_axondeepseg_sem"
     data_dir = "data_axondeepseg_sem"  # Local directory for the cloned repository
     processed_images_dir = "processed_images"
     processed_masks_dir = "processed_masks"
-    target_size = (416, 416)
 
     if not os.path.exists(data_dir):
         subprocess.run(["git", "clone", data_repo_url])
@@ -46,7 +42,6 @@ def preprocess_data():
             img = utils.load_bids_image(img_path, pixel_size)
             img = utils.normalize_and_window(img)
 
-            # Load segmentation masks and resize (maintaining aspect ratio, potentially adding padding)
             # Load segmentation masks and find regions
             axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
             axon_seg_regions = utils.find_regions(axon_seg)
@@ -67,33 +62,5 @@ def preprocess_data():
             image_name = f"{subject}_{sample}.png"
             cv2.imwrite(os.path.join(processed_images_dir, image_name), img)
 
-def visualize_processed_images():
-    # Path to your processed images directory
-    processed_images_dir = "processed_images"
-
-    # Load the bounding box annotations
-    annotations = pd.read_csv(os.path.join(processed_images_dir, "annotations.csv"))
-
-    # Iterate through images and draw bounding boxes
-    for index, row in annotations.iterrows():
-        image_path = os.path.join(processed_images_dir, row["image_name"])
-        img = cv2.imread(image_path)
-        if img is None:
-            print(f"Error loading image: {image_path}")
-            continue
-
-        # Extract bounding box coordinates
-        xmin, ymin, xmax, ymax = row["xmin"], row["ymin"], row["xmax"], row["ymax"]
-
-        # Draw bounding box on image
-        color = (0, 255, 0) if row["class"] == "myelin" else (255, 0, 0)
-        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), color, 2)
-
-        # Display image
-        plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))  # Convert BGR to RGB for matplotlib
-        plt.title(row["image_name"])
-        plt.show()
-
 if __name__ == '__main__':
     preprocess_data()
-    visualize_processed_images()
