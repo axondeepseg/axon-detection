@@ -1,0 +1,7 @@
+requests
+Pillow
+opencv-python-headless
+matplotlib
+numpy
+pandas
+scikit-image
