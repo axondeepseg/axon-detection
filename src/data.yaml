@@ -1,0 +1,9 @@
+path:
+train: train
+val: train  # Use the same folder for validation as you have limited data
+#test: test/images
+
+
+# Class names
+names:
+  0: axonmyelin
