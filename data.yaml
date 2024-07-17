@@ -1,7 +1,0 @@
-train: images/train/
-val: images/train/
-#test: test/images
-
-# Class names
-names:
-  0: axonmyelin
