@@ -16,8 +16,9 @@ def preprocess_data():
     # TODO: Issue of raw path
     data_repo_url = "https://github.com/axondeepseg/data_axondeepseg_sem"
     data_dir = "data_axondeepseg_sem"  # Local directory for the cloned repository
-    processed_images_dir = "dataset/train/images"
-    processed_masks_dir = "dataset/train/labels"
+    processed_images_dir = "dataset/images/train"
+    processed_masks_dir = "dataset/labels/train"
+
 
     if not os.path.exists(data_dir):
         subprocess.run(["git", "clone", data_repo_url])
@@ -39,7 +40,7 @@ def preprocess_data():
             axon_seg_path = data_dict[subject][sample]['axon']
             myelin_seg_path = data_dict[subject][sample]['myelin']
             image_name = f"{subject}_{sample}.png"
-            label_name = f"{subject}_{sample}_label.txt"
+            label_name = f"{subject}_{sample}.txt"
 
             # Load and preprocess the images and the segmentation mask
             img = utils.load_bids_image(img_path, pixel_size)
@@ -50,9 +51,8 @@ def preprocess_data():
             axon_seg_regions = utils.find_regions(axon_seg)
             for i, region in enumerate(axon_seg_regions):
                 minr, minc, maxr, maxc = region.bbox
-                # cv2.rectangle(img, (minc, minr), (maxc, maxr), (255, 0, 0), 2)  # Blue rectangle for axon
+                cv2.rectangle(img, (minc, minr), (maxc, maxr), (255, 0, 0), 2)  # Blue rectangle for axon
                 bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxc, "ymax": maxr, "class": "axon"})
-
 
             # Process Myelin
             myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
@@ -64,16 +64,17 @@ def preprocess_data():
                     width,height = region.axis_major_length, region.axis_minor_length
                     # cv2.rectangle(img, (minc, minr), (maxc, maxr), (0, 255, 0), 2)  # Green rectangle for myelin
                     bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxr, "ymax": maxc, "class": "myelin"})
-                    file.write(f"0 {centroidx} {centroidy} {width} {height}\n")
+
+                    # Normalize coordinates
+                    img_height, img_width = img.shape[:2]
+                    centroidx /= img_width
+                    centroidy /= img_height
+                    width /= img_width
+                    height /= img_height
+                    file.write('0 {} {} {} {}\n'.format(centroidx, centroidy, width, height))
 
 
             cv2.imwrite(os.path.join(processed_images_dir, image_name), img)
-
-
-# def split_data(data_dict):
-
-
-
 
 if __name__ == '__main__':
     preprocess_data()
