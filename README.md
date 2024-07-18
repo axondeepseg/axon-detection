@@ -33,12 +33,8 @@ This project focuses on preprocessing and segmenting axons and myelin from micro
    ```bash
    pip install -r requirements.txt
 
-### Running preprocessing script
+### Running scripts
    ```bash
    cd src
-   ```bash
-   python  preprocessing.py
-
-
-   
-
+   python preprocessing.py
+   python yolo_train.py

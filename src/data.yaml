@@ -1,6 +1,5 @@
 train: images/train/
-val: images/train/
-#test: test/images
+val: images/val/
 
 # Class names
 names:
