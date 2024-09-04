@@ -117,8 +117,7 @@ def preprocess_data_yolo():
     save_set(val_set, val_images_dir, val_masks_dir)
     save_set(test_set, test_images_dir, test_masks_dir)
 
-
-def preprocess_data_retinanet():
+def preprocess_data_coco():
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
 
     Steps:
@@ -139,9 +138,9 @@ def preprocess_data_retinanet():
     val_images_dir = os.path.join(processed_images_dir, "val")
     test_images_dir = os.path.join(processed_images_dir, "test")
 
-    train_annotations_file = os.path.join(processed_annotations_dir, "instances_train.json")
-    val_annotations_file = os.path.join(processed_annotations_dir, "instances_val.json")
-    test_annotations_file = os.path.join(processed_annotations_dir, "instances_test.json")
+    train_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_train.json")
+    val_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_val.json")
+    test_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_test.json")
 
     if not os.path.exists(data_dir):
         subprocess.run(["git", "clone", data_repo_url])
@@ -153,7 +152,13 @@ def preprocess_data_retinanet():
     os.makedirs(processed_annotations_dir, exist_ok=True)
 
     data_dict = utils.load_bids_images(data_dir)
-    coco_annotations = {
+
+    annotation_id = 1
+    image_id = 1
+    image_mask_pairs = []
+
+    # Structures for COCO annotations
+    train_annotations = {
         "images": [],
         "annotations": [],
         "categories": [
@@ -162,9 +167,23 @@ def preprocess_data_retinanet():
         ],
     }
 
-    annotation_id = 1
-    image_id = 1
-    image_mask_pairs = []
+    val_annotations = {
+        "images": [],
+        "annotations": [],
+        "categories": [
+            {"id": 1, "name": "axon", "supercategory": "cell"},
+            {"id": 2, "name": "myelin", "supercategory": "cell"},
+        ],
+    }
+
+    test_annotations = {
+        "images": [],
+        "annotations": [],
+        "categories": [
+            {"id": 1, "name": "axon", "supercategory": "cell"},
+            {"id": 2, "name": "myelin", "supercategory": "cell"},
+        ],
+    }
 
     for subject in data_dict.keys():
         if subject == "sidecar":
@@ -185,22 +204,23 @@ def preprocess_data_retinanet():
 
             # Save image metadata for COCO
             img_height, img_width = img.shape[:2]
-            coco_annotations["images"].append({
+            image_info = {
                 "id": image_id,
                 "width": img_width,
                 "height": img_height,
                 "file_name": image_name,
-            })
+            }
 
             # Load segmentation masks and find regions
             axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
             axon_seg_regions = utils.find_regions(axon_seg)
+            axon_annotations = []
             for region in axon_seg_regions:
                 minr, minc, maxr, maxc = region.bbox
                 bbox_width = maxc - minc
                 bbox_height = maxr - minr
                 bbox_area = bbox_width * bbox_height
-                coco_annotations["annotations"].append({
+                axon_annotations.append({
                     "id": annotation_id,
                     "image_id": image_id,
                     "category_id": 1,  # Axon category
@@ -213,12 +233,13 @@ def preprocess_data_retinanet():
             # Process Myelin
             myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
             myelin_seg_regions = utils.find_regions(myelin_seg)
+            myelin_annotations = []
             for region in myelin_seg_regions:
                 minr, minc, maxr, maxc = region.bbox
                 bbox_width = maxc - minc
                 bbox_height = maxr - minr
                 bbox_area = bbox_width * bbox_height
-                coco_annotations["annotations"].append({
+                myelin_annotations.append({
                     "id": annotation_id,
                     "image_id": image_id,
                     "category_id": 2,  # Myelin category
@@ -228,7 +249,7 @@ def preprocess_data_retinanet():
                 })
                 annotation_id += 1
 
-            image_mask_pairs.append((image_name, img))
+            image_mask_pairs.append((image_name, img, image_info, axon_annotations, myelin_annotations))
 
             # Increment image_id for next image
             image_id += 1
@@ -243,23 +264,29 @@ def preprocess_data_retinanet():
     val_set = image_mask_pairs[num_train:num_train + num_val]
     test_set = image_mask_pairs[num_train + num_val:num_train + num_val + num_test]
 
-    def save_set(image_mask_pairs, image_dir):
-        for image_name, img in image_mask_pairs:
+    def save_set(image_mask_pairs, image_dir, annotations):
+        for image_name, img, image_info, axon_annotations, myelin_annotations in image_mask_pairs:
+            # Save image
             cv2.imwrite(os.path.join(image_dir, image_name), img)
+            # Add to annotations
+            annotations["images"].append(image_info)
+            annotations["annotations"].extend(axon_annotations)
+            annotations["annotations"].extend(myelin_annotations)
 
-    save_set(train_set, train_images_dir)
-    save_set(val_set, val_images_dir)
-    save_set(test_set, test_images_dir)
+    # Save train, val, and test sets
+    save_set(train_set, train_images_dir, train_annotations)
+    save_set(val_set, val_images_dir, val_annotations)
+    save_set(test_set, test_images_dir, test_annotations)
 
-    # Save COCO annotations
+    # Save COCO annotations to respective files
     with open(train_annotations_file, "w") as f:
-        json.dump(coco_annotations, f)
+        json.dump(train_annotations, f)
     with open(val_annotations_file, "w") as f:
-        json.dump(coco_annotations, f)
+        json.dump(val_annotations, f)
     with open(test_annotations_file, "w") as f:
-        json.dump(coco_annotations, f)
-        
+        json.dump(test_annotations, f)
+
 
 if __name__ == '__main__':
     preprocess_data_yolo()
-    preprocess_data_retinanet()
+    preprocess_data_coco()
