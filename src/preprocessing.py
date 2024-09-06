@@ -258,7 +258,7 @@ def preprocess_data_retinanet():
         json.dump(coco_annotations, f)
     with open(test_annotations_file, "w") as f:
         json.dump(coco_annotations, f)
-
+        
 
 if __name__ == '__main__':
     preprocess_data_yolo()
