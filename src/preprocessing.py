@@ -23,7 +23,11 @@ def save_coco_dset(image_mask_pairs, image_dir, annotations):
         annotations["annotations"].extend(axon_annotations)
         annotations["annotations"].extend(myelin_annotations)
 
-def preprocess_data_yolo():
+def download_default_sem_dataset():
+    if not os.path.exists("data_axondeepseg_sem"):
+        subprocess.run(["git", "clone", SEM_DATASET_URL])
+
+def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     """Preprocesses the loaded BIDS data for object detection.
 
     Steps:
@@ -40,7 +44,6 @@ def preprocess_data_yolo():
     """
 
     # TODO: Issue of raw path
-    data_dir = "data_axondeepseg_sem"  # Local directory for the cloned repository
     processed_images_dir = "data-yolo/images"
     processed_masks_dir = "data-yolo/labels"
 
@@ -51,8 +54,8 @@ def preprocess_data_yolo():
     test_images_dir = os.path.join(processed_images_dir, "test")
     test_masks_dir = os.path.join(processed_masks_dir, "test")
 
-    if not os.path.exists(data_dir):
-        subprocess.run(["git", "clone", SEM_DATASET_URL])
+    if data_dir == "data_axondeepseg_sem":
+        download_default_sem_dataset()
 
     #Creating directories
     os.makedirs(train_images_dir, exist_ok=True)
@@ -128,7 +131,7 @@ def preprocess_data_yolo():
     save_yolo_dset(val_set, val_images_dir, val_masks_dir)
     save_yolo_dset(test_set, test_images_dir, test_masks_dir)
 
-def preprocess_data_coco():
+def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
 
     Steps:
@@ -140,7 +143,6 @@ def preprocess_data_coco():
     6. Save the annotations and images in the appropriate COCO directories.
     """
 
-    data_dir = "data_axondeepseg_sem"  # Local directory for the cloned repository
     processed_images_dir = "data-coco/images"
     processed_annotations_dir = "data-coco/annotations"
 
@@ -152,8 +154,8 @@ def preprocess_data_coco():
     val_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_val.json")
     test_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_test.json")
 
-    if not os.path.exists(data_dir):
-        subprocess.run(["git", "clone", SEM_DATASET_URL])
+    if data_dir == "data_axondeepseg_sem":
+        download_default_sem_dataset()
 
     # Create directories
     os.makedirs(train_images_dir, exist_ok=True)
