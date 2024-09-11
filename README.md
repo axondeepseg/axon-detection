@@ -1,4 +1,4 @@
-# Axon and Myelin Segmentation from Microscopy Images using Object Detection
+# Axon Detection in Microscopy Images
 
 This project focuses on preprocessing and segmenting axons and myelin from microscopy images stored in the BIDS format. It leverages OpenCV for image manipulation and is designed to work with object detection models like YOLO or RetinaNet.
 
