@@ -1,0 +1,58 @@
+{
+    "train": [
+        [
+            "sub-rat4_sample-data12.png",
+            "data_axondeepseg_sem\\sub-rat4\\micr\\sub-rat4_sample-data12_SEM.png",
+            null
+        ],
+        [
+            "sub-rat2_sample-data5.png",
+            "data_axondeepseg_sem\\sub-rat2\\micr\\sub-rat2_sample-data5_SEM.png",
+            null
+        ],
+        [
+            "sub-rat6_sample-data15.png",
+            "data_axondeepseg_sem\\sub-rat6\\micr\\sub-rat6_sample-data15_SEM.png",
+            null
+        ],
+        [
+            "sub-rat1_sample-data1.png",
+            "data_axondeepseg_sem\\sub-rat1\\micr\\sub-rat1_sample-data1_SEM.png",
+            null
+        ],
+        [
+            "sub-rat3_sample-data11.png",
+            "data_axondeepseg_sem\\sub-rat3\\micr\\sub-rat3_sample-data11_SEM.png",
+            null
+        ],
+        [
+            "sub-rat8_sample-V915.png",
+            "data_axondeepseg_sem\\sub-rat8\\micr\\sub-rat8_sample-V915_SEM.png",
+            null
+        ],
+        [
+            "sub-rat5_sample-data14.png",
+            "data_axondeepseg_sem\\sub-rat5\\micr\\sub-rat5_sample-data14_SEM.png",
+            null
+        ],
+        [
+            "sub-rat3_sample-data9.png",
+            "data_axondeepseg_sem\\sub-rat3\\micr\\sub-rat3_sample-data9_SEM.png",
+            null
+        ]
+    ],
+    "val": [
+        [
+            "sub-rat7_sample-Maxo03img60.png",
+            "data_axondeepseg_sem\\sub-rat7\\micr\\sub-rat7_sample-Maxo03img60_SEM.png",
+            null
+        ]
+    ],
+    "test": [
+        [
+            "sub-rat3_sample-data10.png",
+            "data_axondeepseg_sem\\sub-rat3\\micr\\sub-rat3_sample-data10_SEM.png",
+            null
+        ]
+    ]
+}

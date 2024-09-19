@@ -109,26 +109,29 @@ def crop_and_resize(img, region, target_size=(416, 416)):
     cropped_img = img[minr:maxr, minc:maxc]
     return resize_and_pad(cropped_img, target_size)
 
+def convert_to_serializable(data):
+    serializable_data = []
+    for image_name, img, *rest in data:
+        serializable_data.append((image_name, img.tolist(), *rest))
+    return serializable_data
 
 def shuffle_and_split(image_mask_pairs: list):
     """Shuffles data and splits."""
 
-    # data_size = len(image_mask_pairs)
-
     train_set, test_set = train_test_split(image_mask_pairs, test_size=0.1)
-    train_set, val_set = train_test_split(image_mask_pairs, test_size=1/9)
+    train_set, val_set = train_test_split(train_set, test_size=1/9)
+
+    train_set_serializable = convert_to_serializable(train_set)
+    val_set_serializable = convert_to_serializable(val_set)
+    test_set_serializable = convert_to_serializable(test_set)
 
     data_split = {
-        "train": train_set,
-        "val": val_set,
-        "test": test_set,
+        "train": train_set_serializable,
+        "val": val_set_serializable,
+        "test": test_set_serializable,
     }
 
     with open('data_split.json', 'w') as json_file:
         json.dump(data_split, json_file, indent=4)
 
     return train_set, test_set, val_set
-
-    # num_train = data_size*0.8
-    # num_val = data_size*0.1
-    # num_test = data_size*0.1
