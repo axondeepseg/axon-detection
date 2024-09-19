@@ -9,6 +9,11 @@ from tqdm import tqdm
 
 SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
 
+# Reorganizes data structure into COCO (retinanet)
+
+# Other problem: Bounding box surrounding myelin and axon (only axon)
+
+
 def save_yolo_dset(image_mask_pairs, image_dir, mask_dir):
     for image_name, img, mask_path in image_mask_pairs:
         cv2.imwrite(os.path.join(image_dir, image_name), img)
@@ -267,6 +272,8 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             image_id += 1
 
     # Shuffle and split the dataset
+    #TODO : shuffle and split once for both
+    # json file with 
     random.shuffle(image_mask_pairs)
     num_train = 7
     num_val = 2
