@@ -290,7 +290,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
 
 if __name__ == '__main__':
-    split_file = 'data_split.json'
+    split_file = 'data_sem_split.json'
     if os.path.exists(split_file):
         os.remove(split_file)
         print(f"{split_file} has been deleted.")

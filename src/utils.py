@@ -110,7 +110,7 @@ def crop_and_resize(img, region, target_size=(416, 416)):
     cropped_img = img[minr:maxr, minc:maxc]
     return resize_and_pad(cropped_img, target_size)
 
-def shuffle_and_split(image_mask_pairs: list, split_file='data_split.json'):
+def shuffle_and_split(image_mask_pairs: list, split_file='data_sem_split.json'):
     """
     Shuffles data and splits the image names into train, val, and test sets.
     Saves the image names for both YOLO and COCO under 'yolo' and 'coco' keys in the split file.
