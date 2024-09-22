@@ -1,4 +1,5 @@
 import cv2
+import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -109,29 +110,41 @@ def crop_and_resize(img, region, target_size=(416, 416)):
     cropped_img = img[minr:maxr, minc:maxc]
     return resize_and_pad(cropped_img, target_size)
 
-def convert_to_serializable(data):
-    serializable_data = []
-    for image_name, img, *rest in data:
-        serializable_data.append((image_name, img.tolist(), *rest))
-    return serializable_data
+def shuffle_and_split(image_mask_pairs: list, split_file='data_split.json'):
+    """
+    Shuffles data and splits the image names into train, val, and test sets.
+    Saves the image names for both YOLO and COCO under 'yolo' and 'coco' keys in the split file.
+    """
+    
+    if os.path.exists(split_file):
+        print(f"Loading existing data split from {split_file}")
+        with open(split_file, 'r') as json_file:
+            data_split = json.load(json_file)
+            return data_split
 
-def shuffle_and_split(image_mask_pairs: list):
-    """Shuffles data and splits."""
+    image_names = [pair[0] for pair in image_mask_pairs]
 
-    train_set, test_set = train_test_split(image_mask_pairs, test_size=0.1)
-    train_set, val_set = train_test_split(train_set, test_size=1/9)
+    train_image_names, test_image_names = train_test_split(image_names, test_size=0.1)
+    train_image_names, val_image_names = train_test_split(train_image_names, test_size=1/9)
 
-    train_set_serializable = convert_to_serializable(train_set)
-    val_set_serializable = convert_to_serializable(val_set)
-    test_set_serializable = convert_to_serializable(test_set)
+    train_image_names = set(train_image_names)
+    val_image_names = set(val_image_names)
+    test_image_names = set(test_image_names)
+
+    val_image_names.difference_update(train_image_names)
+    test_image_names.difference_update(train_image_names)
+    test_image_names.difference_update(val_image_names)
 
     data_split = {
-        "train": train_set_serializable,
-        "val": val_set_serializable,
-        "test": test_set_serializable,
+        "train": list(train_image_names),
+        "val": list(val_image_names),
+        "test": list(test_image_names)
     }
 
-    with open('data_split.json', 'w') as json_file:
+    with open(split_file, 'w') as json_file:
         json.dump(data_split, json_file, indent=4)
 
-    return train_set, test_set, val_set
+    return data_split
+
+
+
