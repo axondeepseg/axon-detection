@@ -7,7 +7,7 @@ import shutil
 import json
 from tqdm import tqdm
 
-from utils import shuffle_and_split
+from utils import split_data
 
 SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
 
@@ -126,16 +126,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
 
     #Shuffle and split the dataset
     random.shuffle(image_mask_pairs)
-
-    train_set, test_set, val_set = shuffle_and_split(image_mask_pairs)
-
-    # num_train = 7
-    # num_val = 2
-    # num_test = 1
-
-    # train_set = image_mask_pairs[:num_train]
-    # val_set = image_mask_pairs[num_train:num_train + num_val]
-    # test_set = image_mask_pairs[num_train + num_val:num_train + num_val + num_test]
+    train_set, test_set, val_set = split_data(image_mask_pairs)
 
     save_yolo_dset(train_set, train_images_dir, train_masks_dir)
     save_yolo_dset(val_set, val_images_dir, val_masks_dir)
@@ -276,18 +267,8 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             # Increment image_id for next image
             image_id += 1
 
-    # Shuffle and split the dataset
-    #TODO : shuffle and split once for both
-    # json file with 
-    # random.shuffle(image_mask_pairs)
-    # num_train = 7
-    # num_val = 2
-    # num_test = 1
-    train_set, test_set, val_set = shuffle_and_split(image_mask_pairs)
-
-    # train_set = image_mask_pairs[:num_train]
-    # val_set = image_mask_pairs[num_train:num_train + num_val]
-    # test_set = image_mask_pairs[num_train + num_val:num_train + num_val + num_test]
+    # Split the dataset
+    train_set, test_set, val_set = split_data(image_mask_pairs)
 
     # Save train, val, and test sets
     save_coco_dset(train_set, train_images_dir, train_annotations)

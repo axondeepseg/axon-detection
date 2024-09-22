@@ -110,25 +110,27 @@ def crop_and_resize(img, region, target_size=(416, 416)):
     return resize_and_pad(cropped_img, target_size)
 
 
-def shuffle_and_split(image_mask_pairs: list):
-    """Shuffles data and splits."""
-
-    # data_size = len(image_mask_pairs)
+def split_data(image_mask_pairs: list):
+    """Splits data to train, validation and test sets"""
 
     train_set, test_set = train_test_split(image_mask_pairs, test_size=0.1)
     train_set, val_set = train_test_split(image_mask_pairs, test_size=1/9)
 
+    # Select the name of the files only without the data
     data_split = {
-        "train": train_set,
-        "val": val_set,
-        "test": test_set,
+        "train": get_set_filenames(train_set),
+        "val": get_set_filenames(val_set),
+        "test": get_set_filenames(test_set),
     }
 
-    with open('data_split.json', 'w') as json_file:
-        json.dump(data_split, json_file, indent=4)
+    try:
+        with open('data_split.json', 'w') as json_file:
+            json.dump(data_split, json_file, indent=4)
+    except Exception as e:
+        print('\n\n Could not dump due to error: ', e)
 
     return train_set, test_set, val_set
 
-    # num_train = data_size*0.8
-    # num_val = data_size*0.1
-    # num_test = data_size*0.1
+
+def get_set_filenames(data_set: list):
+    return list(map(lambda n: n[0], data_set))
