@@ -1,49 +1,49 @@
-import sys
 import os
-import distutils.core
-import subprocess
-from detectron2.engine import DefaultTrainer
-import certifi
 import ssl
-import git
-import pip
+import certifi
+import numpy as np
+import detectron2
+from detectron2.utils.logger import setup_logger
+from detectron2 import model_zoo
+from detectron2.engine import DefaultTrainer, DefaultPredictor
+from detectron2.config import get_cfg
+from detectron2.data.datasets import register_coco_instances
 
-# Function to install Python packages programmatically using pip
-def install_package(package_name):
-    pip.main(['install', package_name])
+# Set up logger for Detectron2
+setup_logger()
 
-# Install pyyaml programmatically
-install_package('pyyaml==5.1')
-
-# Clone the Detectron2 repository programmatically using GitPython
-repo_url = "https://github.com/facebookresearch/detectron2"
-local_dir = "./detectron2"
-
-if not os.path.exists(local_dir):
-    git.Repo.clone_from(repo_url, local_dir)
-else:
-    print(f"Repository already exists in {local_dir}")
-
-# Load setup.py and install dependencies
-dist = distutils.core.run_setup(os.path.join(local_dir, 'setup.py'))
-
-# Install the dependencies from the setup.py file
-for dep in dist.install_requires:
-    install_package(dep)
-
-# Add Detectron2 to the system path
-sys.path.insert(0, os.path.abspath(local_dir))
-
-
-# Tells urllib to use the certificates of certifi
+# SSL context for secure connections
 def create_context():
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.load_verify_locations(certifi.where())
     return context
 
+# Display metadata for verification
+print('\n METADATA CATALOG')
+print(list(detectron2.data.MetadataCatalog))
+
+# Registering the COCO dataset for training and validation
+register_coco_instances(
+    "../data-coco/annotations/json_annotation_train.json", 
+    {}, 
+    "../data-coco/annotations/json_annotation_train.json", 
+    "../data-coco/images/train"
+)
+register_coco_instances(
+    "../data-coco/annotations/json_annotation_val.json", 
+    {}, 
+    "../data-coco/annotations/json_annotation_val.json", 
+    "../data-coco/images/val"
+)
+
+# Display metadata for verification
+print('\n METADATA CATALOG')
+print(list(detectron2.data.MetadataCatalog))
+
+# Configure Detectron2 model
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-Detection/retinanet_R_50_FPN_3x.yaml"))
-cfg.DATASETS.TRAIN = ("../src/data-coco/annotations/json_annotation_train.json")
+cfg.DATASETS.TRAIN = ("../data-coco/annotations/json_annotation_train.json")
 cfg.DATASETS.TEST = ()
 cfg.DATALOADER.NUM_WORKERS = 2
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/retinanet_R_50_FPN_3x.yaml")  # Let training initialize from model zoo
@@ -58,12 +58,12 @@ cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https:/
 cfg.MODEL.DEVICE = "cpu"  # Force CPU usage
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
-print('\n METADATA CATALOG')
-print(list(detectron2.data.MetadataCatalog))
+os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
-# For SSL Certification
+# SSL configuration for urllib 
 ssl._create_default_https_context = create_context()
 
+# Train the model
 trainer = DefaultTrainer(cfg) 
 trainer.resume_or_load(resume=False)
 trainer.train()
