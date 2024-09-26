@@ -1,2 +1,5 @@
 src/data-coco
 src/data-yolo
+
+detectron2/*
+venv/*
