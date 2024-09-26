@@ -1,4 +1,5 @@
 import random
+import numpy as np
 import subprocess
 import utils
 import cv2
@@ -7,12 +8,23 @@ import shutil
 import json
 from tqdm import tqdm
 
+from utils import data_split
+
 SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
+
+# Reorganizes data structure into COCO (retinanet)
+
+# Other problem: Bounding box surrounding myelin and axon (only axon)
+
 
 def save_yolo_dset(image_mask_pairs, image_dir, mask_dir):
     for image_name, img, mask_path in image_mask_pairs:
+        # Save the image
         cv2.imwrite(os.path.join(image_dir, image_name), img)
+        
+        # Copy the corresponding label (mask) file
         shutil.copy(mask_path, os.path.join(mask_dir, os.path.basename(mask_path)))
+
 
 def save_coco_dset(image_mask_pairs, image_dir, annotations):
     for image_name, img, image_info, axon_annotations, myelin_annotations in image_mask_pairs:
@@ -117,19 +129,20 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             # Add image and Masks paths to the list for split
             image_mask_pairs.append((image_name, img, os.path.join(processed_masks_dir, label_name)))
 
-    #Shuffle and split the dataset
-    random.shuffle(image_mask_pairs)
-    num_train = 7
-    num_val = 2
-    num_test = 1
+    data_split = data_split(image_mask_pairs)
+    
+    yolo_data = []
+    for (image_name, img, mask_path) in image_mask_pairs:
+        if image_name in data_split['train'] + data_split['val'] + data_split['test']:
+            yolo_data.append((image_name, img, mask_path))
 
-    train_set = image_mask_pairs[:num_train]
-    val_set = image_mask_pairs[num_train:num_train + num_val]
-    test_set = image_mask_pairs[num_train + num_val:num_train + num_val + num_test]
+    yolo_train_set = [entry for entry in yolo_data if entry[0] in data_split['train']]
+    yolo_val_set = [entry for entry in yolo_data if entry[0] in data_split['val']]
+    yolo_test_set = [entry for entry in yolo_data if entry[0] in data_split['test']]
 
-    save_yolo_dset(train_set, train_images_dir, train_masks_dir)
-    save_yolo_dset(val_set, val_images_dir, val_masks_dir)
-    save_yolo_dset(test_set, test_images_dir, test_masks_dir)
+    save_yolo_dset(yolo_train_set, train_images_dir, train_masks_dir)
+    save_yolo_dset(yolo_val_set, val_images_dir, val_masks_dir)
+    save_yolo_dset(yolo_test_set, test_images_dir, test_masks_dir)
 
 def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
@@ -170,7 +183,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     image_mask_pairs = []
 
     # Structures for COCO annotations
-    train_annotations = {
+    common_annotations = {
         "images": [],
         "annotations": [],
         "categories": [
@@ -179,23 +192,9 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
         ],
     }
 
-    val_annotations = {
-        "images": [],
-        "annotations": [],
-        "categories": [
-            {"id": 1, "name": "axon", "supercategory": "cell"},
-            {"id": 2, "name": "myelin", "supercategory": "cell"},
-        ],
-    }
-
-    test_annotations = {
-        "images": [],
-        "annotations": [],
-        "categories": [
-            {"id": 1, "name": "axon", "supercategory": "cell"},
-            {"id": 2, "name": "myelin", "supercategory": "cell"},
-        ],
-    }
+    train_annotations = common_annotations.copy()
+    val_annotations = common_annotations.copy()
+    test_annotations = common_annotations.copy()
 
     for subject in tqdm(data_dict.keys(), desc='Loading dataset for COCO conversion.'):
         if subject == "sidecar":
@@ -266,20 +265,20 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             # Increment image_id for next image
             image_id += 1
 
-    # Shuffle and split the dataset
-    random.shuffle(image_mask_pairs)
-    num_train = 7
-    num_val = 2
-    num_test = 1
+    data_split = data_split(image_mask_pairs)
+    
+    coco_data = []
+    for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
+        if image_name in data_split['train'] + data_split['val'] + data_split['test']:
+            coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
 
-    train_set = image_mask_pairs[:num_train]
-    val_set = image_mask_pairs[num_train:num_train + num_val]
-    test_set = image_mask_pairs[num_train + num_val:num_train + num_val + num_test]
+    coco_train_set = [entry for entry in coco_data if entry[0] in data_split['train']]
+    coco_val_set = [entry for entry in coco_data if entry[0] in data_split['val']]
+    coco_test_set = [entry for entry in coco_data if entry[0] in data_split['test']]
 
-    # Save train, val, and test sets
-    save_coco_dset(train_set, train_images_dir, train_annotations)
-    save_coco_dset(val_set, val_images_dir, val_annotations)
-    save_coco_dset(test_set, test_images_dir, test_annotations)
+    save_coco_dset(coco_train_set, train_images_dir, train_annotations)
+    save_coco_dset(coco_val_set, val_images_dir, val_annotations)
+    save_coco_dset(coco_test_set, test_images_dir, test_annotations)
 
     # Save COCO annotations to respective files
     with open(train_annotations_file, "w") as f:
@@ -291,5 +290,12 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
 
 if __name__ == '__main__':
+    split_file = 'data_sem_split.json'
+    if os.path.exists(split_file):
+        os.remove(split_file)
+        print(f"{split_file} has been deleted.")
+    else:
+        print(f"{split_file} does not exist.")
+        
     preprocess_data_yolo()
     preprocess_data_coco()
