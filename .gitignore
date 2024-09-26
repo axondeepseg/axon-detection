@@ -1,2 +1,6 @@
 src/data-coco
 src/data-yolo
+src/data_axondeepseg_sem
+
+detectron2/*
+venv/*
