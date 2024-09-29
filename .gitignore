@@ -3,5 +3,9 @@ src/data-yolo/*
 src/data_axondeepseg_sem/*
 src/runs
 
+notebooks/data_axondeepseg_sem/*
+notebooks/detectron2/*
+notebooks/output/*
+
 detectron2/*
 venv/*
