@@ -1,301 +1,136 @@
-import random
-import numpy as np
-import subprocess
-import utils
 import cv2
-import os
-import shutil
+import numpy as np
+import pandas as pd
+from pathlib import Path
 import json
-from tqdm import tqdm
+from skimage import filters, measure
+from sklearn.model_selection import train_test_split
 
-from utils import data_split
+def load_bids_images(data_path):
+    """Loads a BIDS-formatted dataset and index it into a dictionary"""
+    data_path = Path(data_path)
+    samples = pd.read_csv(data_path / 'samples.tsv', delimiter='\t')
+    data_dict = {}
+    for i, row in samples.iterrows():
+        subject = row['participant_id']
+        sample = row['sample_id']
+        if subject not in data_dict:
+            data_dict[subject] = {}
+        data_dict[subject][sample] = {}
 
-SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
+    sample_count = 0
+    for subject in data_dict.keys():
+        samples = data_dict[subject].keys()
+        img_path = data_path / subject / 'micr'
+        segs_path = data_path / 'derivatives' / 'labels' / subject / 'micr'
+        images = list(img_path.glob('*.png'))
+        axon_segs = list(segs_path.glob('*_seg-axon-*'))
+        myelin_segs = list(segs_path.glob('*_seg-myelin-*'))
+        for sample in samples:
+            for img in images:
+                if sample in str(img):
+                    data_dict[subject][sample]['image'] = str(img)
+                    sample_count += 1
+            for axon_seg in axon_segs:
+                if sample in str(axon_seg):
+                    data_dict[subject][sample]['axon'] = str(axon_seg)
+            for myelin_seg in myelin_segs:
+                if sample in str(myelin_seg):
+                    data_dict[subject][sample]['myelin'] = str(myelin_seg)
+        #add pixel_size
+        json_sidecar = next((data_path / subject / 'micr').glob('*.json'))
+        with open(json_sidecar, 'r') as f:
+            sidecar = json.load(f)
+        data_dict[subject]['sidecar'] = sidecar["PixelSize"][0]
 
-# Reorganizes data structure into COCO (retinanet)
+    return data_dict
 
-# Other problem: Bounding box surrounding myelin and axon (only axon)
+def adjust_pixel_values(img, pixel_size):
+    """Scales pixel values based on the provided pixel size."""
+    target_pixel_size = 0.1
+    scale_factor = pixel_size / target_pixel_size
+    img = (img / scale_factor).astype(np.uint8)
+    return img
+
+def load_bids_image(image_path, pixel_size_metadata=None):
+    """Loads a BIDS-formatted image and adjusts pixel values if needed."""
+    img = cv2.imread(image_path)
+    if pixel_size_metadata:
+        img = adjust_pixel_values(img, pixel_size_metadata)
+    return img
+
+def resize_and_pad(img, target_size=(416, 416)):
+    """Resizes an image while maintaining aspect ratio and pads to target size."""
+    old_size = img.shape[:2]
+    ratio = min(target_size[0] / old_size[0], target_size[1] / old_size[1])
+    new_size = tuple([int(x * ratio) for x in old_size])
+
+    img = cv2.resize(img, (new_size[1], new_size[0]))
+
+    delta_w = target_size[1] - new_size[1]
+    delta_h = target_size[0] - new_size[0]
+    top, bottom = delta_h//2, delta_h-(delta_h//2)
+    left, right = delta_w//2, delta_w-(delta_w//2)
+
+    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+    return img
+
+def normalize_and_window(img):
+    """Normalizes and applies intensity windowing to an image."""
+    img = (img - img.min()) / (img.max() - img.min())  # Normalize to [0, 1]
+    low_percentile, high_percentile = np.percentile(img, (2, 98))
+    img = np.clip(img, low_percentile, high_percentile)
+    img = (img - img.min()) / (img.max() - img.min())  # Renormalize
+    img = (img * 255).astype(np.uint8)  # Scale to [0, 255]
+    return img
+
+def find_regions(img):
+    """Finds connected regions directly from a binary segmentation mask."""
+    # Ensure the image is of integer type for labeling
+    img = img.astype(int)
+
+    # Label connected regions
+    labeled_img = measure.label(img)
+
+    # Extract region properties
+    regions = measure.regionprops(labeled_img)
+    if len(regions) == 0:
+        print("No regions found!")
+
+    return regions
+
+def crop_and_resize(img, region, target_size=(416, 416)):
+    """Crops an image around a region and resizes it."""
+    if region.area == 0:
+        print("Region area is zero!")
+        return np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8)  # Return a black image
+
+    minr, minc, maxr, maxc = region.bbox
+    cropped_img = img[minr:maxr, minc:maxc]
+    return resize_and_pad(cropped_img, target_size)
 
 
-def save_yolo_dset(image_mask_pairs, image_dir, mask_dir):
-    for image_name, img, mask_path in image_mask_pairs:
-        # Save the image
-        cv2.imwrite(os.path.join(image_dir, image_name), img)
-        
-        # Copy the corresponding label (mask) file
-        shutil.copy(mask_path, os.path.join(mask_dir, os.path.basename(mask_path)))
+def split_data(image_mask_pairs: list):
+    """Splits data to train, validation and test sets"""
 
+    train_set, test_set = train_test_split(image_mask_pairs, test_size=0.1)
+    train_set, val_set = train_test_split(image_mask_pairs, test_size=1/9)
 
-def save_coco_dset(image_mask_pairs, image_dir, annotations):
-    for image_name, img, image_info, axon_annotations, myelin_annotations in image_mask_pairs:
-        # Save image
-        cv2.imwrite(os.path.join(image_dir, image_name), img)
-        # Add to annotations
-        annotations["images"].append(image_info)
-        annotations["annotations"].extend(axon_annotations)
-        annotations["annotations"].extend(myelin_annotations)
-
-def download_default_sem_dataset():
-    if not os.path.exists("data_axondeepseg_sem"):
-        subprocess.run(["git", "clone", SEM_DATASET_URL])
-
-def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
-    """Preprocesses the loaded BIDS data for object detection.
-
-    Steps:
-    1. Load
-    2. Normalize + windowing
-    3. find regions axons Use skimage.measures.regionprops()
-    4. Croping + Resizing
-
-    LABELS FORMAT DESCRIPTION FOR YOLO: similar to COCO
-    - One *.txt file per image
-    - One row per object in class x_center y_center width height format.
-    - Box coordinates must be in normalized xywh format (from 0 to 1)
-    - Class numbers should be zero-indexed
-    """
-
-    # TODO: Issue of raw path
-    processed_images_dir = "data-yolo/images"
-    processed_masks_dir = "data-yolo/labels"
-
-    train_images_dir = os.path.join(processed_images_dir, "train")
-    train_masks_dir = os.path.join(processed_masks_dir, "train")
-    val_images_dir = os.path.join(processed_images_dir, "val")
-    val_masks_dir = os.path.join(processed_masks_dir, "val")
-    test_images_dir = os.path.join(processed_images_dir, "test")
-    test_masks_dir = os.path.join(processed_masks_dir, "test")
-
-    if data_dir == "data_axondeepseg_sem":
-        download_default_sem_dataset()
-
-    #Creating directories
-    os.makedirs(train_images_dir, exist_ok=True)
-    os.makedirs(train_masks_dir, exist_ok=True)
-    os.makedirs(val_images_dir, exist_ok=True)
-    os.makedirs(val_masks_dir, exist_ok=True)
-    os.makedirs(test_images_dir, exist_ok=True)
-    os.makedirs(test_masks_dir, exist_ok=True)
-
-    data_dict = utils.load_bids_images(data_dir)
-    bbox_data = []
-
-    #Collect images and masks in a format for YOLO
-    image_mask_pairs = []
-
-    for subject in tqdm(data_dict.keys(), desc='Loading dataset for YOLO conversion.'):
-        if subject == "sidecar":
-            continue
-
-        pixel_size = data_dict[subject]['sidecar']
-        for sample in data_dict[subject].keys():
-            if sample == "sidecar":
-                continue
-            img_path = data_dict[subject][sample]['image']
-            axon_seg_path = data_dict[subject][sample]['axon']
-            myelin_seg_path = data_dict[subject][sample]['myelin']
-            image_name = f"{subject}_{sample}.png"
-            label_name = f"{subject}_{sample}.txt"
-
-            # Load and preprocess the images and the segmentation mask
-            img = utils.load_bids_image(img_path, pixel_size)
-            img = utils.normalize_and_window(img)
-
-            # Load segmentation masks and find regions
-            axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
-            axon_seg_regions = utils.find_regions(axon_seg)
-            for i, region in enumerate(axon_seg_regions):
-                minr, minc, maxr, maxc = region.bbox
-                bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxc, "ymax": maxr, "class": "axon"})
-
-            # Process Myelin
-            myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
-            myelin_seg_regions = utils.find_regions(myelin_seg)
-            with open(os.path.join(processed_masks_dir, label_name), "w") as file:
-                for i, region in enumerate(myelin_seg_regions):
-                    minr, minc, maxr, maxc = region.bbox
-                    centroidx, centroidy = region.centroid[0], region.centroid[1]
-                    width,height = region.axis_major_length, region.axis_minor_length
-                    bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxr, "ymax": maxc, "class": "myelin"})
-
-                    # Normalize coordinates
-                    img_height, img_width = img.shape[:2]
-                    centroidx /= img_width
-                    centroidy /= img_height
-                    width /= img_width
-                    height /= img_height
-                    file.write('0 {} {} {} {}\n'.format(centroidx, centroidy, width, height))
-
-            # Add image and Masks paths to the list for split
-            image_mask_pairs.append((image_name, img, os.path.join(processed_masks_dir, label_name)))
-
-    data_split = data_split(image_mask_pairs)
-    
-    yolo_data = []
-    for (image_name, img, mask_path) in image_mask_pairs:
-        if image_name in data_split['train'] + data_split['val'] + data_split['test']:
-            yolo_data.append((image_name, img, mask_path))
-
-    yolo_train_set = [entry for entry in yolo_data if entry[0] in data_split['train']]
-    yolo_val_set = [entry for entry in yolo_data if entry[0] in data_split['val']]
-    yolo_test_set = [entry for entry in yolo_data if entry[0] in data_split['test']]
-
-    save_yolo_dset(yolo_train_set, train_images_dir, train_masks_dir)
-    save_yolo_dset(yolo_val_set, val_images_dir, val_masks_dir)
-    save_yolo_dset(yolo_test_set, test_images_dir, test_masks_dir)
-
-def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
-    """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
-
-    Steps:
-    1. Load
-    2. Normalize + windowing
-    3. Find regions (axons and myelin) using skimage.measure.regionprops()
-    4. Create COCO annotations
-    5. Croping + Resizing
-    6. Save the annotations and images in the appropriate COCO directories.
-    """
-
-    processed_images_dir = "data-coco/images"
-    processed_annotations_dir = "data-coco/annotations"
-
-    train_images_dir = os.path.join(processed_images_dir, "train")
-    val_images_dir = os.path.join(processed_images_dir, "val")
-    test_images_dir = os.path.join(processed_images_dir, "test")
-
-    train_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_train.json")
-    val_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_val.json")
-    test_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_test.json")
-
-    if data_dir == "data_axondeepseg_sem":
-        download_default_sem_dataset()
-
-    # Create directories
-    os.makedirs(train_images_dir, exist_ok=True)
-    os.makedirs(val_images_dir, exist_ok=True)
-    os.makedirs(test_images_dir, exist_ok=True)
-    os.makedirs(processed_annotations_dir, exist_ok=True)
-
-    data_dict = utils.load_bids_images(data_dir)
-
-    annotation_id = 1
-    image_id = 1
-    image_mask_pairs = []
-
-    # Structures for COCO annotations
-    common_annotations = {
-        "images": [],
-        "annotations": [],
-        "categories": [
-            {"id": 1, "name": "axon", "supercategory": "cell"},
-            {"id": 2, "name": "myelin", "supercategory": "cell"},
-        ],
+    # Select the name of the files only without the data
+    data_split = {
+        "train": get_set_filenames(train_set),
+        "val": get_set_filenames(val_set),
+        "test": get_set_filenames(test_set),
     }
 
-    train_annotations = common_annotations.copy()
-    val_annotations = common_annotations.copy()
-    test_annotations = common_annotations.copy()
+    try:
+        with open('data_split.json', 'w') as json_file:
+            json.dump(data_split, json_file, indent=4)
+    except Exception as e:
+        print('\n\n Could not dump due to error: ', e)
 
-    for subject in tqdm(data_dict.keys(), desc='Loading dataset for COCO conversion.'):
-        if subject == "sidecar":
-            continue
-
-        pixel_size = data_dict[subject]['sidecar']
-        for sample in data_dict[subject].keys():
-            if sample == "sidecar":
-                continue
-            img_path = data_dict[subject][sample]['image']
-            axon_seg_path = data_dict[subject][sample]['axon']
-            myelin_seg_path = data_dict[subject][sample]['myelin']
-            image_name = f"{subject}_{sample}.png"
-
-            # Load and preprocess the images
-            img = utils.load_bids_image(img_path, pixel_size)
-            img = utils.normalize_and_window(img)
-
-            # Save image metadata for COCO
-            img_height, img_width = img.shape[:2]
-            image_info = {
-                "id": image_id,
-                "width": img_width,
-                "height": img_height,
-                "file_name": image_name,
-            }
-
-            # Load segmentation masks and find regions
-            axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
-            axon_seg_regions = utils.find_regions(axon_seg)
-            axon_annotations = []
-            for region in axon_seg_regions:
-                minr, minc, maxr, maxc = region.bbox
-                bbox_width = maxc - minc
-                bbox_height = maxr - minr
-                bbox_area = bbox_width * bbox_height
-                axon_annotations.append({
-                    "id": annotation_id,
-                    "image_id": image_id,
-                    "category_id": 1,  # Axon category
-                    "bbox": [minc, minr, bbox_width, bbox_height],
-                    "area": bbox_area,
-                    "iscrowd": 0,
-                })
-                annotation_id += 1
-
-            # Process Myelin
-            myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
-            myelin_seg_regions = utils.find_regions(myelin_seg)
-            myelin_annotations = []
-            for region in myelin_seg_regions:
-                minr, minc, maxr, maxc = region.bbox
-                bbox_width = maxc - minc
-                bbox_height = maxr - minr
-                bbox_area = bbox_width * bbox_height
-                myelin_annotations.append({
-                    "id": annotation_id,
-                    "image_id": image_id,
-                    "category_id": 2,  # Myelin category
-                    "bbox": [minc, minr, bbox_width, bbox_height],
-                    "area": bbox_area,
-                    "iscrowd": 0,
-                })
-                annotation_id += 1
-
-            image_mask_pairs.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-
-            # Increment image_id for next image
-            image_id += 1
-
-    data_split = data_split(image_mask_pairs)
-    
-    coco_data = []
-    for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
-        if image_name in data_split['train'] + data_split['val'] + data_split['test']:
-            coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-
-    coco_train_set = [entry for entry in coco_data if entry[0] in data_split['train']]
-    coco_val_set = [entry for entry in coco_data if entry[0] in data_split['val']]
-    coco_test_set = [entry for entry in coco_data if entry[0] in data_split['test']]
-
-    save_coco_dset(coco_train_set, train_images_dir, train_annotations)
-    save_coco_dset(coco_val_set, val_images_dir, val_annotations)
-    save_coco_dset(coco_test_set, test_images_dir, test_annotations)
-
-    # Save COCO annotations to respective files
-    with open(train_annotations_file, "w") as f:
-        json.dump(train_annotations, f)
-    with open(val_annotations_file, "w") as f:
-        json.dump(val_annotations, f)
-    with open(test_annotations_file, "w") as f:
-        json.dump(test_annotations, f)
+    return train_set, test_set, val_set
 
 
-if __name__ == '__main__':
-    split_file = 'data_sem_split.json'
-    if os.path.exists(split_file):
-        os.remove(split_file)
-        print(f"{split_file} has been deleted.")
-    else:
-        print(f"{split_file} does not exist.")
-        
-    preprocess_data_yolo()
-    preprocess_data_coco()
+def get_set_filenames(data_set: list):
+    return list(map(lambda n: n[0], data_set))
