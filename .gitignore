@@ -2,6 +2,7 @@ src/data-coco/*
 src/data-yolo/*
 src/data_axondeepseg_sem/*
 src/runs
+src/__pycache__/utils.cpython-312.pyc
 
 notebooks/data_axondeepseg_sem/*
 notebooks/detectron2/*

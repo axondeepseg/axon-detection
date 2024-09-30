@@ -143,8 +143,8 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     6. Save the annotations and images in the appropriate COCO directories.
     """
 
-    processed_images_dir = "data-coco/images"
-    processed_annotations_dir = "data-coco/annotations"
+    processed_images_dir = "src/data-coco/images"
+    processed_annotations_dir = "src/data-coco/annotations"
 
     train_images_dir = os.path.join(processed_images_dir, "train")
     val_images_dir = os.path.join(processed_images_dir, "val")
@@ -291,5 +291,5 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
 
 if __name__ == '__main__':
-    preprocess_data_yolo()
+    # preprocess_data_yolo()
     preprocess_data_coco()
