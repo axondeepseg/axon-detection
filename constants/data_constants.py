@@ -1,0 +1,1 @@
+SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"

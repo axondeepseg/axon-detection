@@ -1,14 +1,14 @@
 import subprocess
+from constants.data_constants import SEM_DATASET_URL
 import utils
 import cv2
 import os
 import shutil
 import json
 from tqdm import tqdm
+from pathlib import Path
 
 from utils import split
-
-SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
 
 # Reorganizes data structure into COCO (retinanet)
 
