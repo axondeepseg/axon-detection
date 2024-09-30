@@ -24,7 +24,7 @@ def save_coco_dset(image_mask_pairs, image_dir, annotations):
         annotations["annotations"].extend(myelin_annotations)
 
 def download_default_sem_dataset():
-    if not os.path.exists("data_axondeepseg_sem"):
+    if not os.path.exists("src/data_axondeepseg_sem"):
         subprocess.run(["git", "clone", SEM_DATASET_URL])
 
 def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
@@ -131,7 +131,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     save_yolo_dset(val_set, val_images_dir, val_masks_dir)
     save_yolo_dset(test_set, test_images_dir, test_masks_dir)
 
-def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
+def preprocess_data_coco(data_dir: str = "src/data_axondeepseg_sem"):
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
 
     Steps:
@@ -154,7 +154,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     val_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_val.json")
     test_annotations_file = os.path.join(processed_annotations_dir, "json_annotation_test.json")
 
-    if data_dir == "data_axondeepseg_sem":
+    if data_dir == "src/data_axondeepseg_sem":
         download_default_sem_dataset()
 
     # Create directories

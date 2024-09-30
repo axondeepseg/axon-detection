@@ -9,6 +9,8 @@ from detectron2.engine import DefaultTrainer, DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.data.datasets import register_coco_instances
 
+import wandb
+
 # Set up logger for Detectron2
 setup_logger()
 
@@ -24,16 +26,16 @@ print(list(detectron2.data.MetadataCatalog))
 
 # Registering the COCO dataset for training and validation
 register_coco_instances(
-    "../data-coco/annotations/json_annotation_train.json", 
+    "src/data-coco/annotations/json_annotation_train.json", 
     {}, 
-    "../data-coco/annotations/json_annotation_train.json", 
-    "../data-coco/images/train"
+    "src/data-coco/annotations/json_annotation_train.json", 
+    "src/data-coco/images/train"
 )
 register_coco_instances(
-    "../data-coco/annotations/json_annotation_val.json", 
+    "src/data-coco/annotations/json_annotation_val.json", 
     {}, 
-    "../data-coco/annotations/json_annotation_val.json", 
-    "../data-coco/images/val"
+    "src/data-coco/annotations/json_annotation_val.json", 
+    "src/data-coco/images/val"
 )
 
 # Display metadata for verification
@@ -43,7 +45,7 @@ print(list(detectron2.data.MetadataCatalog))
 # Configure Detectron2 model
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-Detection/retinanet_R_50_FPN_3x.yaml"))
-cfg.DATASETS.TRAIN = ("../data-coco/annotations/json_annotation_train.json")
+cfg.DATASETS.TRAIN = ("src/data-coco/annotations/json_annotation_train.json")
 cfg.DATASETS.TEST = ()
 cfg.DATALOADER.NUM_WORKERS = 2
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/retinanet_R_50_FPN_3x.yaml")  # Let training initialize from model zoo
@@ -56,14 +58,28 @@ cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1  # only has one class (ballon). (see https:/
 
 # NOTE: this config means the number of classes, but a few popular unofficial tutorials incorrect uses num_classes+1 here.
 cfg.MODEL.DEVICE = "cpu"  # Force CPU usage
+
+# TODO: change root output to src/retinaNet/output
 os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
-os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 
 # SSL configuration for urllib 
 ssl._create_default_https_context = create_context()
 
-# Train the model
-trainer = DefaultTrainer(cfg) 
-trainer.resume_or_load(resume=False)
-trainer.train()
+api = wandb.Api()
+
+run = api.run("neuropoly-axon-detection/retinanet-project/<run_id>")
+if run.state == "finished":
+    for i, row in run.history().iterrows():
+      print(row["_timestamp"], row["accuracy"])
+
+
+if __name__ == '__main__':
+    # Train the model
+    trainer = DefaultTrainer(cfg) 
+    trainer.resume_or_load(resume=False)
+    try:
+        trainer.train()
+
+    except Exception as e:
+        print('Training stopped due to:' + str(e))

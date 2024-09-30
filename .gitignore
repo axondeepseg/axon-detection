@@ -10,3 +10,7 @@ notebooks/output/*
 
 detectron2/*
 venv/*
+
+output/*
+
+.DS_Store
