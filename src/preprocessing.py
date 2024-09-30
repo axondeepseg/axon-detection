@@ -1,5 +1,3 @@
-import random
-import numpy as np
 import subprocess
 import utils
 import cv2
@@ -8,7 +6,7 @@ import shutil
 import json
 from tqdm import tqdm
 
-from utils import data_split
+from utils import split
 
 SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
 
@@ -129,7 +127,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             # Add image and Masks paths to the list for split
             image_mask_pairs.append((image_name, img, os.path.join(processed_masks_dir, label_name)))
 
-    data_split = data_split(image_mask_pairs)
+    data_split = split(image_mask_pairs)
     
     yolo_data = []
     for (image_name, img, mask_path) in image_mask_pairs:
@@ -265,7 +263,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             # Increment image_id for next image
             image_id += 1
 
-    data_split = data_split(image_mask_pairs)
+    data_split = split(image_mask_pairs)
     
     coco_data = []
     for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
