@@ -1,3 +1,4 @@
+import shutil
 import cv2
 import os
 import numpy as np
@@ -142,5 +143,33 @@ def split(image_mask_pairs: list, split_file='data_sem_split.json'):
 
     return data_split
 
+def clear_directories_yolo():
+    """clear directories in data-yolo"""
+    directories = [
+        "data-yolo/images/train", 
+        "data-yolo/images/val", 
+        "data-yolo/images/test", 
+        "data-yolo/labels/train", 
+        "data-yolo/labels/val", 
+        "data-yolo/labels/test",
+        "data-yolo/labels"
+    ]
+    for directory in directories:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        os.makedirs(directory)
+
+def clear_directories_coco():
+    """clear directories in data-coco"""
+    directories = [
+        "data-coco/images/train", 
+        "data-coco/images/val", 
+        "data-coco/images/test", 
+        "data-coco/annotations"
+    ]
+    for directory in directories:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+        os.makedirs(directory)
 
 

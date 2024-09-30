@@ -5,10 +5,10 @@ import os
 import shutil
 import json
 from tqdm import tqdm
+from pathlib import Path
+from constants.data_constants import SEM_DATASET_URL
 
-from utils import split
-
-SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
+from utils import split, clear_directories_yolo, clear_directories_coco
 
 # Reorganizes data structure into COCO (retinanet)
 
@@ -17,11 +17,21 @@ SEM_DATASET_URL = "https://github.com/axondeepseg/data_axondeepseg_sem"
 
 def save_yolo_dset(image_mask_pairs, image_dir, mask_dir):
     for image_name, img, mask_path in image_mask_pairs:
+        image_base_name = os.path.splitext(image_name)[0]
+        mask_base_name = os.path.splitext(os.path.basename(mask_path))[0]
+
+        # Ensure that the image and label have the same base name
+        if image_base_name != mask_base_name:
+            print(f"Warning: Image {image_name} and label {mask_path} do not match.")
+            continue
+
         # Save the image
         cv2.imwrite(os.path.join(image_dir, image_name), img)
         
         # Copy the corresponding label (mask) file
         shutil.copy(mask_path, os.path.join(mask_dir, os.path.basename(mask_path)))
+        print(f"Processed: {image_name}, Label: {mask_path}")
+
 
 
 def save_coco_dset(image_mask_pairs, image_dir, annotations):
@@ -129,10 +139,21 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
 
     data_split = split(image_mask_pairs)
     
+    processed_image_names_yolo = set()
+
     yolo_data = []
     for (image_name, img, mask_path) in image_mask_pairs:
-        if image_name in data_split['train'] + data_split['val'] + data_split['test']:
-            yolo_data.append((image_name, img, mask_path))
+        # Ensure each image is only added once to yolo_data
+        if image_name not in processed_image_names_yolo:
+            if image_name in data_split['train']:
+                yolo_data.append((image_name, img, mask_path))
+                processed_image_names_yolo.add(image_name)
+            elif image_name in data_split['val']:
+                yolo_data.append((image_name, img, mask_path))
+                processed_image_names_yolo.add(image_name)
+            elif image_name in data_split['test']:
+                yolo_data.append((image_name, img, mask_path))
+                processed_image_names_yolo.add(image_name)
 
     yolo_train_set = [entry for entry in yolo_data if entry[0] in data_split['train']]
     yolo_val_set = [entry for entry in yolo_data if entry[0] in data_split['val']]
@@ -265,15 +286,26 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
     data_split = split(image_mask_pairs)
     
+    processed_image_names = set()
+
     coco_data = []
     for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
-        if image_name in data_split['train'] + data_split['val'] + data_split['test']:
-            coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+        # Ensure each image is only added once to coco_data
+        if image_name not in processed_image_names:
+            if image_name in data_split['train']:
+                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+                processed_image_names.add(image_name)
+            elif image_name in data_split['val']:
+                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+                processed_image_names.add(image_name)
+            elif image_name in data_split['test']:
+                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+                processed_image_names.add(image_name)
 
     coco_train_set = [entry for entry in coco_data if entry[0] in data_split['train']]
     coco_val_set = [entry for entry in coco_data if entry[0] in data_split['val']]
     coco_test_set = [entry for entry in coco_data if entry[0] in data_split['test']]
-
+ 
     save_coco_dset(coco_train_set, train_images_dir, train_annotations)
     save_coco_dset(coco_val_set, val_images_dir, val_annotations)
     save_coco_dset(coco_test_set, test_images_dir, test_annotations)
@@ -294,6 +326,8 @@ if __name__ == '__main__':
         print(f"{split_file} has been deleted.")
     else:
         print(f"{split_file} does not exist.")
-        
+    
+    clear_directories_yolo()
+    clear_directories_coco()
     preprocess_data_yolo()
     preprocess_data_coco()
