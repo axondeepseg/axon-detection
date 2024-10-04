@@ -1,2 +1,7 @@
-src/data-coco
-src/data-yolo
+src/data-coco/*
+src/data-yolo/*
+src/data_axondeepseg_sem/*
+src/runs
+
+detectron2/*
+venv/*
