@@ -2,6 +2,6 @@ test: axon-detection/src/data-yolo/images/test
 train: axon-detection/src/data-yolo/images/train
 val: axon-detection/src/data-yolo/images/val
 
-# Class names
-names:
-  0: axonmyelin
+nc: 1
+
+names: ['axonmyelin']
