@@ -1,13 +1,13 @@
 import os
 import ssl
 import certifi
-import numpy as np
+# import numpy as np
 import detectron2
-from detectron2.utils.logger import setup_logger
 from detectron2 import model_zoo
 from detectron2.engine import DefaultTrainer, DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.data.datasets import register_coco_instances
+from detectron2.utils.logger import setup_logger
 
 import wandb
 
@@ -26,16 +26,16 @@ print(list(detectron2.data.MetadataCatalog))
 
 # Registering the COCO dataset for training and validation
 register_coco_instances(
-    "src/data-coco/annotations/json_annotation_train.json", 
+    "../data-coco/annotations/json_annotation_train.json", 
     {}, 
-    "src/data-coco/annotations/json_annotation_train.json", 
-    "src/data-coco/images/train"
+    "../data-coco/annotations/json_annotation_train.json", 
+    "../data-coco/images/train"
 )
 register_coco_instances(
-    "src/data-coco/annotations/json_annotation_val.json", 
+    "../data-coco/annotations/json_annotation_val.json", 
     {}, 
-    "src/data-coco/annotations/json_annotation_val.json", 
-    "src/data-coco/images/val"
+    "../data-coco/annotations/json_annotation_val.json", 
+    "../data-coco/images/val"
 )
 
 # Display metadata for verification
@@ -45,7 +45,7 @@ print(list(detectron2.data.MetadataCatalog))
 # Configure Detectron2 model
 cfg = get_cfg()
 cfg.merge_from_file(model_zoo.get_config_file("COCO-Detection/retinanet_R_50_FPN_3x.yaml"))
-cfg.DATASETS.TRAIN = ("src/data-coco/annotations/json_annotation_train.json")
+cfg.DATASETS.TRAIN = ("../data-coco/annotations/json_annotation_train.json")
 cfg.DATASETS.TEST = ()
 cfg.DATALOADER.NUM_WORKERS = 2
 cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/retinanet_R_50_FPN_3x.yaml")  # Let training initialize from model zoo
@@ -66,9 +66,18 @@ os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
 # SSL configuration for urllib 
 ssl._create_default_https_context = create_context()
 
+
+run = wandb.init(
+    entity="neuropoly-axon-detection", 
+    project="retinanet-project", 
+    name="retinaRun", 
+    id="0001"
+)
+
 api = wandb.Api()
 
-run = api.run("neuropoly-axon-detection/retinanet-project/<run_id>")
+run = api.run("neuropoly-axon-detection/retinanet-project/0001")
+
 if run.state == "finished":
     for i, row in run.history().iterrows():
       print(row["_timestamp"], row["accuracy"])
