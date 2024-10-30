@@ -77,7 +77,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     if data_dir == "data_axondeepseg_sem":
         download_default_sem_dataset()
 
-    #Creating directories
+    # Creating directories
     os.makedirs(train_images_dir, exist_ok=True)
     os.makedirs(train_masks_dir, exist_ok=True)
     os.makedirs(val_images_dir, exist_ok=True)
@@ -88,7 +88,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     data_dict = utils.load_bids_images(data_dir)
     bbox_data = []
 
-    #Collect images and masks in a format for YOLO
+    # Collect images and masks in a format for YOLO
     image_mask_pairs = []
 
     for subject in tqdm(data_dict.keys(), desc='Loading dataset for YOLO conversion.'):
@@ -122,17 +122,19 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             with open(os.path.join(processed_masks_dir, label_name), "w") as file:
                 for i, region in enumerate(myelin_seg_regions):
                     minr, minc, maxr, maxc = region.bbox
-                    centroidx, centroidy = region.centroid[0], region.centroid[1]
                     width,height = region.axis_major_length, region.axis_minor_length
                     bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxr, "ymax": maxc, "class": "myelin"})
 
                     # Normalize coordinates
                     img_height, img_width = img.shape[:2]
-                    centroidx /= img_width
-                    centroidy /= img_height
-                    width /= img_width
-                    height /= img_height
-                    file.write('0 {} {} {} {}\n'.format(centroidx, centroidy, width, height))
+
+                    x_center = (minc + maxc) / 2 / img_width
+                    y_center = (minr + maxr) / 2 / img_height
+                    width = (maxc - minc) / img_width
+                    height = (maxr - minr) / img_height
+
+                    # Write axonmyelin class (0) to the label file
+                    file.write('0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(x_center, y_center, width, height))
 
             # Add image and Masks paths to the list for split
             image_mask_pairs.append((image_name, img, os.path.join(processed_masks_dir, label_name)))
