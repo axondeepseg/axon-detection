@@ -122,7 +122,6 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             with open(os.path.join(processed_masks_dir, label_name), "w") as file:
                 for i, region in enumerate(myelin_seg_regions):
                     minr, minc, maxr, maxc = region.bbox
-                    # centroidx, centroidy = region.centroid[0], region.centroid[1]
                     width,height = region.axis_major_length, region.axis_minor_length
                     bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxr, "ymax": maxc, "class": "myelin"})
 
