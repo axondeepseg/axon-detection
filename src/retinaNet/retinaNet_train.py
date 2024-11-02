@@ -10,25 +10,17 @@ from constants.constants import COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES, COCO_V
 from constants.wanb_config_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
 
 def register_instances():
-    print('list')
-    print(list(MetadataCatalog))
-    # reset_instances()
+
     if (COCO_TRAIN_ANNOTATION, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES) not in list(MetadataCatalog):
         register_coco_instances(COCO_TRAIN_ANNOTATION, {}, COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES)
         register_coco_instances(COCO_VAL_ANNOTATION, {}, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES)
 
+        # FIXME: These lines don't work since thing_classes already has a value (axon and myelin) and thing_dataset_id_to_contiguous_id
         # MetadataCatalog.get(COCO_VAL_ANNOTATION).set(thing_classes=["axon"])
         # thing_classes = MetadataCatalog.get(COCO_VAL_ANNOTATION).thing_classes
         # dataset_id_contiguous_id = {i: i for i in range(len(["axon", "myelin"]))}
         # MetadataCatalog.get(COCO_VAL_ANNOTATION).set(thing_dataset_id_to_contiguous_id=dataset_id_contiguous_id)
 
-
-    # if (MetadataCatalog.get(COCO_VAL_ANNOTATION).thing_classes == None):
-    #     MetadataCatalog.get(COCO_VAL_ANNOTATION).set(thing_classes=["axon"])
-        
-    # thing_classes = MetadataCatalog.get(COCO_VAL_ANNOTATION).thing_classes
-    # dataset_id_contiguous_id = {i: i for i in range(len(thing_classes))}
-    # MetadataCatalog.get(COCO_VAL_ANNOTATION).set(thing_dataset_id_to_contiguous_id=dataset_id_contiguous_id)
 
 def reset_instances():
     MetadataCatalog.remove(COCO_VAL_ANNOTATION)

@@ -25,15 +25,11 @@ class WandBTrainer(DefaultTrainer):
         training_time = time.time() - self.start_time
         wandb.log({"training_time": training_time})
 
-    # FIXME: Evaluator is not recognizing data 
     def evaluate(self):
-        print('coco val before')
         evaluator = COCOEvaluator(COCO_VAL_ANNOTATION, output_dir="./output/")
-        print('coco val after')
-        print(evaluator)
         val_loader = build_detection_test_loader(self.cfg, COCO_VAL_ANNOTATION)
-        print('before results')
+
+        # FIXME: Error is thrown during inference
         results = inference_on_dataset(self.model, val_loader, evaluator)
-        print('after results')
         wandb.log(results)
         return results
