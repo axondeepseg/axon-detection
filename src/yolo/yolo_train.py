@@ -4,8 +4,6 @@ from ..constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_
 from ..yolo.wandb_trainer import WandbTrainer
   
 
-wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
-
 if __name__ == "__main__":
 
     config = {
@@ -19,6 +17,12 @@ if __name__ == "__main__":
     }
 
     trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)
-    trainer.run_step()  
+    trainer.run_step()
+
+    # Log inference time
+    trainer.log_inference_time(test_dir='src/data-yolo/images/test')  
+
+    # Visualize predictions
+    trainer.visualize_predictions(test_dir='src/data-yolo/images/test')
 
     wandb.finish()
