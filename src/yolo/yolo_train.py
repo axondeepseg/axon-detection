@@ -1,6 +1,24 @@
-from ultralytics import YOLO
+import wandb
+import os
+from ..constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
+from ..yolo.wandb_trainer import WandbTrainer
+  
 
-if __name__ == '__main__':
-    model = YOLO("./yolov8n.pt")
-    # Best results observed with 138 epochs
-    model.train(data="../data.yaml", epochs=138, imgsz=640, device='mps')
+wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
+
+if __name__ == "__main__":
+
+    config = {
+        # NOTE: "datasets_dir" in settings.json of Ultralytics should look like this:  "\\axon-detection"
+        'data': 'src/data-yolo/data.yaml',
+        'epochs': 138,
+        'imgsz': 640,
+        'batch': 16,
+        'project': WANDB_PROJECT,
+        'name': WANDB_RUN_NAME
+    }
+
+    trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)
+    trainer.run_step()  
+
+    wandb.finish()
