@@ -16,13 +16,7 @@ if __name__ == "__main__":
         'name': WANDB_RUN_NAME
     }
 
-    trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)
+    trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)    
     trainer.run_step()
+    
 
-    # Log inference time
-    trainer.log_inference_time(test_dir='src/data-yolo/images/test')  
-
-    # Visualize predictions
-    trainer.visualize_predictions(test_dir='src/data-yolo/images/test')
-
-    wandb.finish()

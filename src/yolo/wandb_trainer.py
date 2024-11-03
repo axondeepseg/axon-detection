@@ -7,10 +7,14 @@ from ..constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_
 
 class WandbTrainer:
     def __init__(self, model_path, config):
-        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
         self.model = YOLO(model_path)
         self.cfg = config  
         self.start_time = time.time()
+        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
+
+    def __del__(self):
+        if wandb.run:
+            wandb.finish()
     
     def run_step(self):
         results = self.model.train(
@@ -35,12 +39,16 @@ class WandbTrainer:
         }
         
         for key, value in metrics_dict.items():
-            if value is not None: 
+            if value is not None:
+                wandb.init(mode="disabled") 
                 wandb.log({key: value})
         
         training_time = time.time() - self.start_time
         wandb.init(mode="disabled")
         wandb.log({"training_time": training_time})
+
+        self.log_inference_time(test_dir="src/data-yolo/images/test") # log inference time on test set
+        self.visualize_predictions(test_dir="src/data-yolo/images/test", conf=0.25) # visualize predictions on test set
 
 
     def log_inference_time(self, test_dir):
@@ -59,11 +67,13 @@ class WandbTrainer:
         image_paths = glob.glob(os.path.join(test_dir, "*.png")) 
         
         for image_path in image_paths:
-            results = self.model.predict(image_path, save=False, conf=conf)
+            print("Predicting on image:", image_path)
+            results = self.model.predict(image_path, save=True, conf=conf)
             
             for result in results:
+                print("Visualizing prediction...")
                 result_plotted = result.plot()
-                wandb.init(mode="disabled") 
+                wandb.init(mode="disabled")
                 wandb.log({"Prediction": [wandb.Image(result_plotted, caption=os.path.basename(image_path))]})
         
         print("Predictions visualized and logged to wandb.")
