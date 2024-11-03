@@ -3,6 +3,7 @@ import wandb
 from ultralytics import YOLO
 import glob
 import os
+import cv2
 from ..constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
 
 class WandbTrainer:
@@ -47,7 +48,7 @@ class WandbTrainer:
         wandb.init(mode="disabled")
         wandb.log({"training_time": training_time})
 
-        self.log_inference_time(test_dir="src/data-yolo/images/test") # log inference time on test set
+        # self.log_inference_time(test_dir="src/data-yolo/images/test") # log inference time on test set
         self.visualize_predictions(test_dir="src/data-yolo/images/test", conf=0.25) # visualize predictions on test set
 
 
@@ -64,16 +65,33 @@ class WandbTrainer:
         print(f"Inference time on test set: {inference_time:.2f} seconds")
 
     def visualize_predictions(self, test_dir, conf=0.25):
-        image_paths = glob.glob(os.path.join(test_dir, "*.png")) 
+        output_directory = 'output_predictions'
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        image_paths = glob.glob(os.path.join(test_dir, "*.png"))
         
         for image_path in image_paths:
             print("Predicting on image:", image_path)
-            results = self.model.predict(image_path, save=True, conf=conf)
-            
+            results = self.model.predict(image_path, save=False, conf=conf)
+
             for result in results:
                 print("Visualizing prediction...")
-                result_plotted = result.plot()
-                wandb.init(mode="disabled")
-                wandb.log({"Prediction": [wandb.Image(result_plotted, caption=os.path.basename(image_path))]})
+                img = result.orig_img 
+                for box in result.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    confidence = box.conf[0]
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    cv2.putText(img, f"{confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
+                output_path = os.path.join(output_directory, os.path.basename(image_path))
+                success = cv2.imwrite(output_path, img)
+                if success:
+                    print(f"Saved prediction image to {output_path}")
+                else:
+                    print(f"Failed to save prediction image to {output_path}")
+                
+                wandb.log({"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]})
         
         print("Predictions visualized and logged to wandb.")
+
