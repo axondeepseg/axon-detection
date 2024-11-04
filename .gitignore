@@ -9,5 +9,8 @@ src/retinaNet/constants/__pycache__
 src/retinaNet/__pycache__
 src/retinaNet/src/
 
+src/__pycache__
+src/constants/__pycache__
+
 detectron2/*
 venv/*
