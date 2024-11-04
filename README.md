@@ -2,13 +2,14 @@
 
 This project focuses on preprocessing and segmenting axons and myelin from microscopy images stored in the BIDS format. It leverages OpenCV for image manipulation and is designed to work with object detection models like YOLO or RetinaNet.
 
-## Features
-
+## Overview
+### General:
 * Loads BIDS-formatted microscopy images.
 * Automatically adjusts pixel values based on metadata.
 * Resizes and pads images to fit object detection model input sizes.
 * Addinded
 * Includes a `utils.py` file with helper functions for easy preprocessing.
+
 
 ## Getting Started
 
@@ -35,6 +36,12 @@ This project focuses on preprocessing and segmenting axons and myelin from micro
 
 ### Running scripts
    ```bash
+### Old yolo model:
    cd src
    python preprocessing.py
    python yolo_train.py
+
+### Specific script for RetinaNet model:
+   ```bash
+   cd src
+   python -m retinaNet.retinaNet_train
