@@ -1,19 +1,27 @@
+import os
 import wandb
-from wanb_trainer import WandBTrainer
+from retinaNet.wanb_trainer import WandBTrainer
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.data.datasets import register_coco_instances
 from detectron2.utils.logger import setup_logger
 from detectron2.data import MetadataCatalog
+from preprocessing import preprocess_data_coco
+from utils import clear_directories_coco
 
-from constants.constants import COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES, CONFIG_FILE, OUTPUT_DIR
-from constants.wanb_config_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
+from retinaNet.constants.constants import SEM_DATA_SPLIT, COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES, COCO_TEST_ANNOTATION, COCO_TEST_IMAGES, CONFIG_FILE, OUTPUT_DIR
+from retinaNet.constants.wanb_config_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
 
 def register_instances():
 
-    if (COCO_TRAIN_ANNOTATION, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES) not in list(MetadataCatalog):
+    if (COCO_TRAIN_ANNOTATION, COCO_VAL_IMAGES) not in list(MetadataCatalog):
         register_coco_instances(COCO_TRAIN_ANNOTATION, {}, COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES)
+
+    if (COCO_VAL_ANNOTATION, COCO_VAL_IMAGES) not in list(MetadataCatalog):
         register_coco_instances(COCO_VAL_ANNOTATION, {}, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES)
+
+    if (COCO_TEST_ANNOTATION, COCO_TEST_IMAGES) not in list(MetadataCatalog):
+        register_coco_instances(COCO_TEST_ANNOTATION, {}, COCO_TEST_ANNOTATION, COCO_TEST_IMAGES)
 
         # FIXME: These lines don't work since thing_classes already has a value (axon and myelin) and thing_dataset_id_to_contiguous_id
         # MetadataCatalog.get(COCO_VAL_ANNOTATION).set(thing_classes=["axon"])
@@ -22,19 +30,19 @@ def register_instances():
         # MetadataCatalog.get(COCO_VAL_ANNOTATION).set(thing_dataset_id_to_contiguous_id=dataset_id_contiguous_id)
 
 
-def reset_instances():
+def reset_instance():
     MetadataCatalog.remove(COCO_VAL_ANNOTATION)
 
 def configure_detectron():
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(CONFIG_FILE))
     cfg.DATASETS.TRAIN = (COCO_TRAIN_ANNOTATION,)
-    cfg.DATASETS.TEST = ()
+    cfg.DATASETS.TEST = (COCO_TEST_ANNOTATION,)
     cfg.DATALOADER.NUM_WORKERS = 2
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
     cfg.SOLVER.IMS_PER_BATCH = 2  
     cfg.SOLVER.BASE_LR = 0.00025  
-    cfg.SOLVER.MAX_ITER = 1
+    cfg.SOLVER.MAX_ITER = 10
     cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128   
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 2
@@ -43,8 +51,21 @@ def configure_detectron():
 
     return cfg
 
+def clear_data():
+    split_file = SEM_DATA_SPLIT
+    if os.path.exists(split_file):
+        os.remove(split_file)
+        print(f"{split_file} has been deleted.")
+    else:
+        print(f"{split_file} does not exist.")
+    
+    clear_directories_coco()
+
 
 if __name__ == '__main__':
+
+    clear_data()
+    preprocess_data_coco()
 
     setup_logger()
     register_instances()
@@ -56,7 +77,8 @@ if __name__ == '__main__':
         entity=WANDB_ENTITY, 
         project=WANDB_PROJECT, 
         name=WANDB_RUN_NAME, 
-        id=WANDB_RUN_ID
+        id=WANDB_RUN_ID,
+        dir='/output'
     )
 
     run.config.update({
@@ -74,9 +96,8 @@ if __name__ == '__main__':
         print('Training stopped due to:' + str(e))
 
     # TODO: Fix evaluation method
-    try:
-        final_metrics = trainer.evaluate()
-        run.log(final_metrics)
-    except Exception as e:
-        print('Validation run stopped due to:' + str(e))
-
+    # try:
+    #     final_val_metrics = trainer.evaluate()
+    #     run.log(final_metrics)
+    # except Exception as e:
+    #     print('Validation run stopped due to:' + str(e))

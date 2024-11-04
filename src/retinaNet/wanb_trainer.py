@@ -1,10 +1,10 @@
 import time
-import wandb
+import wandb as wandb
 from detectron2.engine import DefaultTrainer, hooks
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 
-from constants.constants import COCO_VAL_ANNOTATION, COCO_VAL_IMAGES
+from retinaNet.constants.constants import COCO_TEST_ANNOTATION, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES
 
 
 class WandBTrainer(DefaultTrainer):
@@ -33,3 +33,11 @@ class WandBTrainer(DefaultTrainer):
         results = inference_on_dataset(self.model, val_loader, evaluator)
         wandb.log(results)
         return results
+    
+    def test(self):
+        test_evaluator = COCOEvaluator(COCO_TEST_ANNOTATION, output_dir="./output/")
+        test_loader = build_detection_test_loader(self.cfg, COCO_TEST_ANNOTATION)
+
+        test_results = inference_on_dataset(self.model, test_loader, test_evaluator)
+        wandb.log(test_results)
+        return test_results 
