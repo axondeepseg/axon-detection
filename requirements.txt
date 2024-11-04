@@ -8,3 +8,4 @@ scikit-image
 ultralytics
 tqdm
 scikit-learn
+wandb

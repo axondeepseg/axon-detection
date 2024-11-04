@@ -1,0 +1,18 @@
+{
+    "train": [
+        "sub-rat3_sample-data11.png",
+        "sub-rat7_sample-Maxo03img60.png",
+        "sub-rat4_sample-data12.png",
+        "sub-rat3_sample-data9.png",
+        "sub-rat2_sample-data5.png",
+        "sub-rat8_sample-V915.png",
+        "sub-rat3_sample-data10.png",
+        "sub-rat5_sample-data14.png"
+    ],
+    "val": [
+        "sub-rat1_sample-data1.png"
+    ],
+    "test": [
+        "sub-rat6_sample-data15.png"
+    ]
+}
