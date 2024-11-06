@@ -203,17 +203,23 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
     # Structures for COCO annotations
     common_annotations = {
-        "images": [],
-        "annotations": [],
         "categories": [
-            {"id": 1, "name": "axon", "supercategory": "cell"},
-            {"id": 2, "name": "myelin", "supercategory": "cell"},
+            {"id": 0, "name": "axon", "supercategory": "cell"},
+            {"id": 1, "name": "myelin", "supercategory": "cell"},
         ],
     }
 
     train_annotations = common_annotations.copy()
+    train_annotations["images"] = []
+    train_annotations["annotations"] = []
+
     val_annotations = common_annotations.copy()
+    val_annotations["images"] = []
+    val_annotations["annotations"] = []
+
     test_annotations = common_annotations.copy()
+    test_annotations["images"] = []
+    test_annotations["annotations"] = []
 
     for subject in tqdm(data_dict.keys(), desc='Loading dataset for COCO conversion.'):
         if subject == "sidecar":
@@ -253,7 +259,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
                 axon_annotations.append({
                     "id": annotation_id,
                     "image_id": image_id,
-                    "category_id": 1,  # Axon category
+                    "category_id": 0,  # Axon category
                     "bbox": [minc, minr, bbox_width, bbox_height],
                     "area": bbox_area,
                     "iscrowd": 0,
@@ -272,7 +278,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
                 myelin_annotations.append({
                     "id": annotation_id,
                     "image_id": image_id,
-                    "category_id": 2,  # Myelin category
+                    "category_id": 1,  # Myelin category
                     "bbox": [minc, minr, bbox_width, bbox_height],
                     "area": bbox_area,
                     "iscrowd": 0,
@@ -286,29 +292,33 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
     data_split = split(image_mask_pairs)
     
-    processed_image_names = set()
+    # processed_image_names = set()
 
-    coco_data = []
-    for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
-        # Ensure each image is only added once to coco_data
-        if image_name not in processed_image_names:
-            if image_name in data_split['train']:
-                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-                processed_image_names.add(image_name)
-            elif image_name in data_split['val']:
-                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-                processed_image_names.add(image_name)
-            elif image_name in data_split['test']:
-                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-                processed_image_names.add(image_name)
+    # coco_data = []
+    # for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
+    #     # Ensure each image is only added once to coco_data
+    #     if image_name not in processed_image_names:
+    #         if image_name in data_split['train']:
+    #             coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+    #             processed_image_names.add(image_name)
+    #         elif image_name in data_split['val']:
+    #             coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+    #             processed_image_names.add(image_name)
+    #         elif image_name in data_split['test']:
+    #             coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
+    #             processed_image_names.add(image_name)
 
-    coco_train_set = [entry for entry in coco_data if entry[0] in data_split['train']]
-    coco_val_set = [entry for entry in coco_data if entry[0] in data_split['val']]
-    coco_test_set = [entry for entry in coco_data if entry[0] in data_split['test']]
+    save_split([entry for entry in image_mask_pairs if entry[0] in data_split['train']], train_images_dir, train_annotations)
+    save_split([entry for entry in image_mask_pairs if entry[0] in data_split['val']], val_images_dir, val_annotations)
+    save_split([entry for entry in image_mask_pairs if entry[0] in data_split['test']], test_images_dir, test_annotations)
+
+    # coco_train_set = [entry for entry in coco_data if entry[0] in data_split['train']]
+    # coco_val_set = [entry for entry in coco_data if entry[0] in data_split['val']]
+    # coco_test_set = [entry for entry in coco_data if entry[0] in data_split['test']]
  
-    save_coco_dset(coco_train_set, train_images_dir, train_annotations)
-    save_coco_dset(coco_val_set, val_images_dir, val_annotations)
-    save_coco_dset(coco_test_set, test_images_dir, test_annotations)
+    # save_coco_dset(coco_train_set, train_images_dir, train_annotations)
+    # save_coco_dset(coco_val_set, val_images_dir, val_annotations)
+    # save_coco_dset(coco_test_set, test_images_dir, test_annotations)
 
     # Save COCO annotations to respective files
     with open(train_annotations_file, "w") as f:
@@ -318,6 +328,17 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     with open(test_annotations_file, "w") as f:
         json.dump(test_annotations, f)
 
+
+def save_split(split_data, images_dir, annotations):
+    """Saves images to the specified directory and appends image and annotation metadata to the COCO annotations structure."""
+    for (image_name, img, image_info, axon_annotations, myelin_annotations) in split_data:
+        # Save the image in the appropriate directory
+        cv2.imwrite(os.path.join(images_dir, image_name), img)
+        
+        # Add image and annotations to COCO structure
+        annotations["images"].append(image_info)
+        annotations["annotations"].extend(axon_annotations)
+        annotations["annotations"].extend(myelin_annotations)
 
 if __name__ == '__main__':
     split_file = 'data_sem_split.json'

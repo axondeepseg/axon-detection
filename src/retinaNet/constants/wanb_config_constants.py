@@ -8,4 +8,4 @@ project_runs = api.runs(f"{WANDB_ENTITY}/{WANDB_PROJECT}")
 
 run_count = len(project_runs) + 1
 WANDB_RUN_NAME = f"run_{run_count}"
-WANDB_RUN_ID = f"run_26{run_count}"
+WANDB_RUN_ID = f"run_{run_count}"
