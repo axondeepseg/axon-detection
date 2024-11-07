@@ -69,11 +69,11 @@ def configure_detectron():
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
     cfg.SOLVER.IMS_PER_BATCH = 2  
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 80
-    # cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
+    cfg.SOLVER.MAX_ITER = 40
+    cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
     # cfg.SOLVER.STEPS = [20, 30] # change according to max iter
-    cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # constant decay
-    cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
+    # cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # constant decay
+    # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128   
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.DEVICE = "cpu"  
@@ -141,12 +141,12 @@ def clear_data():
 
 #     print("Predictions visualized and logged to WandB.")
 
-def visualize_predictions(cfg, test_dir, conf=0.25):
+def visualize_predictions(cfg, test_dir, conf_threshold=0.25):
         output_directory = 'output_predictions'
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_threshold
         predictor = DefaultPredictor(cfg)
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
         
@@ -163,14 +163,10 @@ def visualize_predictions(cfg, test_dir, conf=0.25):
             print(len(boxes))
             print(boxes)
 
-            # Filter out predictions below the confidence threshold
-            filtered_boxes = [box for i, box in enumerate(boxes)]
-
-            for i, box in enumerate(filtered_boxes):
-                print('filtered boxes sizes')
-                print(len(filtered_boxes))
-                x1, y1, x2, y2 = map(int, box)
-                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            for i, box in enumerate(boxes):
+                if scores[i] > conf_threshold:
+                    x1, y1, x2, y2 = map(int, box)
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
             output_path = os.path.join(output_directory, os.path.basename(image_path))
             success = cv2.imwrite(output_path, img)
@@ -183,6 +179,7 @@ def visualize_predictions(cfg, test_dir, conf=0.25):
 
 if __name__ == '__main__':
 
+    # TODO: Run this only once when the registered metadata isnt the same as local
     # clear_data()
     # preprocess_data_coco()
 
@@ -200,7 +197,8 @@ if __name__ == '__main__':
         project=WANDB_PROJECT, 
         name=WANDB_RUN_NAME, 
         id=WANDB_RUN_ID,
-        dir='/output'
+        dir='/output',
+        mode='offline'
     )
 
     run.config.update({
@@ -209,23 +207,23 @@ if __name__ == '__main__':
         "max_iter": cfg.SOLVER.MAX_ITER
     })
 
-    trainer = WandBTrainer(cfg)
-    trainer.resume_or_load(resume=False)
+    model = WandBTrainer(cfg)
+    model.resume_or_load(resume=False)
 
     try:
-        trainer.train()
+        model.train()
     except Exception as e:
         print('Training stopped due to:' + str(e))
 
     # TODO: Fix evaluation method
     # try:
-    #     final_val_metrics = trainer.evaluate()
+    #     final_val_metrics = model.evaluate()
     #     run.log(final_val_metrics)
     # except Exception as e:
     #     print('Validation run stopped due to:' + str(e))
 
     # try:
-    #     final_test_metrics = trainer.test()
+    #     final_test_metrics = model.test()
     #     run.log(final_test_metrics)
     # except Exception as e:
     #     print('Validation run stopped due to:' + str(e))
