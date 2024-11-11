@@ -12,9 +12,6 @@ from utils import split, clear_directories_yolo, clear_directories_coco
 
 # Reorganizes data structure into COCO (retinanet)
 
-# Other problem: Bounding box surrounding myelin and axon (only axon)
-
-
 def save_yolo_dset(image_mask_pairs, image_dir, mask_dir):
     for image_name, img, mask_path in image_mask_pairs:
         image_base_name = os.path.splitext(image_name)[0]
@@ -165,6 +162,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     save_yolo_dset(yolo_val_set, val_images_dir, val_masks_dir)
     save_yolo_dset(yolo_test_set, test_images_dir, test_masks_dir)
 
+
 def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
 
@@ -205,17 +203,22 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
     # Structures for COCO annotations
     common_annotations = {
-        "images": [],
-        "annotations": [],
         "categories": [
-            {"id": 1, "name": "axon", "supercategory": "cell"},
-            {"id": 2, "name": "myelin", "supercategory": "cell"},
+            {"id": 0, "name": "axon", "supercategory": "cell"},
         ],
     }
 
     train_annotations = common_annotations.copy()
+    train_annotations["images"] = []
+    train_annotations["annotations"] = []
+
     val_annotations = common_annotations.copy()
+    val_annotations["images"] = []
+    val_annotations["annotations"] = []
+
     test_annotations = common_annotations.copy()
+    test_annotations["images"] = []
+    test_annotations["annotations"] = []
 
     for subject in tqdm(data_dict.keys(), desc='Loading dataset for COCO conversion.'):
         if subject == "sidecar":
@@ -227,7 +230,6 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
                 continue
             img_path = data_dict[subject][sample]['image']
             axon_seg_path = data_dict[subject][sample]['axon']
-            myelin_seg_path = data_dict[subject][sample]['myelin']
             image_name = f"{subject}_{sample}.png"
 
             # Load and preprocess the images
@@ -255,70 +257,38 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
                 axon_annotations.append({
                     "id": annotation_id,
                     "image_id": image_id,
-                    "category_id": 1,  # Axon category
+                    "category_id": 0,  # Axon category
                     "bbox": [minc, minr, bbox_width, bbox_height],
                     "area": bbox_area,
                     "iscrowd": 0,
                 })
                 annotation_id += 1
 
-            # Process Myelin
-            myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
-            myelin_seg_regions = utils.find_regions(myelin_seg)
-            myelin_annotations = []
-            for region in myelin_seg_regions:
-                minr, minc, maxr, maxc = region.bbox
-                bbox_width = maxc - minc
-                bbox_height = maxr - minr
-                bbox_area = bbox_width * bbox_height
-                myelin_annotations.append({
-                    "id": annotation_id,
-                    "image_id": image_id,
-                    "category_id": 2,  # Myelin category
-                    "bbox": [minc, minr, bbox_width, bbox_height],
-                    "area": bbox_area,
-                    "iscrowd": 0,
-                })
-                annotation_id += 1
+            image_mask_pairs.append((image_name, img, image_info, axon_annotations))
 
-            image_mask_pairs.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-
-            # Increment image_id for next image
             image_id += 1
 
     data_split = split(image_mask_pairs)
-    
-    processed_image_names = set()
 
-    coco_data = []
-    for (image_name, img, image_info, axon_annotations, myelin_annotations) in image_mask_pairs:
-        # Ensure each image is only added once to coco_data
-        if image_name not in processed_image_names:
-            if image_name in data_split['train']:
-                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-                processed_image_names.add(image_name)
-            elif image_name in data_split['val']:
-                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-                processed_image_names.add(image_name)
-            elif image_name in data_split['test']:
-                coco_data.append((image_name, img, image_info, axon_annotations, myelin_annotations))
-                processed_image_names.add(image_name)
+    save_split([entry for entry in image_mask_pairs if entry[0] in data_split['train']], train_images_dir, train_annotations)
+    save_split([entry for entry in image_mask_pairs if entry[0] in data_split['val']], val_images_dir, val_annotations)
+    save_split([entry for entry in image_mask_pairs if entry[0] in data_split['test']], test_images_dir, test_annotations)
 
-    coco_train_set = [entry for entry in coco_data if entry[0] in data_split['train']]
-    coco_val_set = [entry for entry in coco_data if entry[0] in data_split['val']]
-    coco_test_set = [entry for entry in coco_data if entry[0] in data_split['test']]
- 
-    save_coco_dset(coco_train_set, train_images_dir, train_annotations)
-    save_coco_dset(coco_val_set, val_images_dir, val_annotations)
-    save_coco_dset(coco_test_set, test_images_dir, test_annotations)
-
-    # Save COCO annotations to respective files
     with open(train_annotations_file, "w") as f:
         json.dump(train_annotations, f)
     with open(val_annotations_file, "w") as f:
         json.dump(val_annotations, f)
     with open(test_annotations_file, "w") as f:
         json.dump(test_annotations, f)
+
+
+def save_split(split_data, images_dir, annotations):
+    """Saves images to the specified directory and appends image and annotation metadata to the COCO annotations structure."""
+    for (image_name, img, image_info, axon_annotations) in split_data:
+        cv2.imwrite(os.path.join(images_dir, image_name), img)
+        
+        annotations["images"].append(image_info)
+        annotations["annotations"].extend(axon_annotations)
 
 
 if __name__ == '__main__':
