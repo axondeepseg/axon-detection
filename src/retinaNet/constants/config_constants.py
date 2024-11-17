@@ -1,0 +1,2 @@
+
+CONF_THRESHOLD = 0.4

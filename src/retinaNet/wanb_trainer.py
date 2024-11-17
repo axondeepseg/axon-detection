@@ -9,7 +9,8 @@ from detectron2.engine import DefaultTrainer, hooks
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 
-from retinaNet.constants.constants import COCO_TEST_ANNOTATION, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES
+from retinaNet.constants.data_file_constants import COCO_TEST_ANNOTATION, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES
+from retinaNet.constants.config_constants import CONF_THRESHOLD
 
 from detectron2.engine import DefaultPredictor
 
@@ -60,7 +61,7 @@ class WandBTrainer(DefaultTrainer):
             print(len(boxes))
 
             for i, box in enumerate(boxes):
-                if scores[i] > 0.5:
+                if scores[i] > CONF_THRESHOLD:
                     x1, y1, x2, y2 = map(int, box)
                     cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
@@ -73,6 +74,10 @@ class WandBTrainer(DefaultTrainer):
         """
         Log evaluation metrics to WandB.
         """
+
+        print('AR BOX')
+        print(results["bbox"]["AR"])
+
         metrics = {
             f"{split_name}_mAP": results["bbox"]["AP"], 
             f"{split_name}_AP50": results["bbox"]["AP50"],
@@ -113,6 +118,7 @@ class WandBTrainer(DefaultTrainer):
 
         # FIXME: Error is thrown during inference
         results = inference_on_dataset(self.model, val_loader, evaluator)
+        self.log_metrics(results, 'val')
         wandb.log(results)
         return results
     
@@ -120,7 +126,7 @@ class WandBTrainer(DefaultTrainer):
         test_evaluator = COCOEvaluator(COCO_TEST_ANNOTATION, output_dir="./output/")
         test_loader = build_detection_test_loader(self.cfg, COCO_TEST_ANNOTATION)
 
-        test_results = inference_on_dataset(self.model, test_loader, test_evaluator)
+        test_results = inference_on_dataset(self.model, test_loader, test_evaluator,)
         self.log_metrics(test_results, 'test')
 
         wandb.log(test_results)

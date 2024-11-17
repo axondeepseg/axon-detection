@@ -201,7 +201,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     # Structures for COCO annotations
     common_annotations = {
         "categories": [
-            {"id": 0, "name": "axon", "supercategory": "cell"},
+            {"id": 0, "name": "axon_myelin", "supercategory": "cell"},
         ],
     }
 
@@ -226,7 +226,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             if sample == "sidecar":
                 continue
             img_path = data_dict[subject][sample]['image']
-            axon_seg_path = data_dict[subject][sample]['axon']
+            axon_myelin_seg_path = data_dict[subject][sample]['myelin']
             image_name = f"{subject}_{sample}.png"
 
             # Load and preprocess the images
@@ -243,15 +243,15 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             }
 
             # Load segmentation masks and find regions
-            axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
-            axon_seg_regions = utils.find_regions(axon_seg)
-            axon_annotations = []
-            for region in axon_seg_regions:
+            axon_myelin_seg = cv2.imread(axon_myelin_seg_path, cv2.IMREAD_GRAYSCALE)
+            axon_myelin_seg_regions = utils.find_regions(axon_myelin_seg)
+            axon_myelin_annotations = []
+            for region in axon_myelin_seg_regions:
                 minr, minc, maxr, maxc = region.bbox
                 bbox_width = maxc - minc
                 bbox_height = maxr - minr
                 bbox_area = bbox_width * bbox_height
-                axon_annotations.append({
+                axon_myelin_annotations.append({
                     "id": annotation_id,
                     "image_id": image_id,
                     "category_id": 0,  # Axon category
@@ -261,7 +261,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
                 })
                 annotation_id += 1
 
-            image_mask_pairs.append((image_name, img, image_info, axon_annotations))
+            image_mask_pairs.append((image_name, img, image_info, axon_myelin_annotations))
 
             # Increment image_id for next image
             image_id += 1

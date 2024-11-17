@@ -15,8 +15,10 @@ from preprocessing import preprocess_data_coco
 from utils import clear_directories_coco
 
 from retinaNet.visualisations import visualize_true_labels
-from retinaNet.constants.constants import SEM_DATA_SPLIT, COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES, COCO_TEST_ANNOTATION, COCO_TEST_IMAGES, CONFIG_FILE, OUTPUT_DIR
+
+from retinaNet.constants.data_file_constants import SEM_DATA_SPLIT, COCO_TRAIN_ANNOTATION, COCO_TRAIN_IMAGES, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES, COCO_TEST_ANNOTATION, COCO_TEST_IMAGES, CONFIG_FILE, OUTPUT_DIR
 from retinaNet.constants.wanb_config_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME
+from retinaNet.constants.config_constants import CONF_THRESHOLD
 
 def register_instances():
 
@@ -28,6 +30,7 @@ def register_instances():
 
     if (COCO_TEST_ANNOTATION, COCO_TEST_IMAGES) not in list(MetadataCatalog):
         register_coco_instances(COCO_TEST_ANNOTATION, {}, COCO_TEST_ANNOTATION, COCO_TEST_IMAGES)
+
 
         # FIXME: These lines don't work since thing_classes already has a value (axon and myelin) and thing_dataset_id_to_contiguous_id
         # thing_classes = MetadataCatalog.get(COCO_VAL_ANNOTATION).thing_classes
@@ -60,7 +63,7 @@ def configure_detectron():
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
     cfg.SOLVER.IMS_PER_BATCH = 2
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 100 # (2*100)/8 = 60 epochs 
+    cfg.SOLVER.MAX_ITER = 60 # (2*100)/8 = 60 epochs 
     cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
     # cfg.SOLVER.STEPS = [20, 30] # change according to max iter
     # cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # constant decay
@@ -69,6 +72,9 @@ def configure_detectron():
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.DEVICE = "cpu"  
     cfg.OUTPUT_DIR = OUTPUT_DIR
+    cfg.TEST.DETECTIONS_PER_IMAGE = 2000
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
+    
 
     return cfg
 
@@ -82,7 +88,7 @@ def clear_data():
     
     clear_directories_coco()
 
-def visualize_predictions(cfg, test_dir, conf_threshold=0.5):
+def visualize_predictions(cfg, test_dir, conf_threshold=CONF_THRESHOLD):
         output_directory = 'output_predictions'
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
@@ -146,6 +152,7 @@ if __name__ == '__main__':
         project=WANDB_PROJECT, 
         name=WANDB_RUN_NAME,
         dir='/output',
+        # mode='offline'
     )
 
     run.config.update({
@@ -163,18 +170,19 @@ if __name__ == '__main__':
         print('Training stopped due to:' + str(e))
 
     # TODO: Fix evaluation method
-    # try:
-    #     final_val_metrics = model.evaluate()
-    #     run.log(final_val_metrics)
-    # except Exception as e:
-    #     print('Validation run stopped due to:' + str(e))
+    try:
+        final_val_metrics = model.evaluate()
+        run.log(final_val_metrics)
+    except Exception as e:
+        print('Validation run stopped due to:' + str(e))
 
-    # try:
-    #     final_test_metrics = model.test()
-    #     run.log(final_test_metrics)
-    # except Exception as e:
-    #     print('Validation run stopped due to:' + str(e))
+    try:
+        final_test_metrics = model.test()
+        run.log(final_test_metrics)
+    except Exception as e:
+        print('Validation run stopped due to:' + str(e))
 
     cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth" 
 
     visualize_predictions(cfg, COCO_TEST_IMAGES)
+    visualize_true_labels(COCO_TEST_ANNOTATION, set_type='test')

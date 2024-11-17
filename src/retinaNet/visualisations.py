@@ -2,7 +2,7 @@ import json
 import os
 import cv2
 import matplotlib.pyplot as plt
-from retinaNet.constants.constants import OUTPUT_TRUE_LABELS
+from retinaNet.constants.data_file_constants import OUTPUT_TRUE_LABELS
 
 def visualize_true_labels(annotations_path, set_type='test'):
 
