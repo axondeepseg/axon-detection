@@ -3,7 +3,7 @@ import time
 import wandb
 import cv2
 import glob
-from retinaNet.wanb_trainer import WandBTrainer
+from retinaNet.trainer import Trainer
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.data.datasets import register_coco_instances
@@ -60,22 +60,28 @@ def configure_detectron():
     cfg.DATASETS.TRAIN = (COCO_TRAIN_ANNOTATION,)
     cfg.DATASETS.TEST = (COCO_TEST_ANNOTATION,)
     cfg.DATALOADER.NUM_WORKERS = 2
-    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
-    cfg.SOLVER.IMS_PER_BATCH = 2
+
+    cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
     cfg.SOLVER.MAX_ITER = 60 # (2*100)/8 = 60 epochs 
-    cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
+    # cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
     # cfg.SOLVER.STEPS = [20, 30] # change according to max iter
-    # cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # constant decay
-    # cfg.SOLVER.GAMMA = 0.01  # decay factor for lr
+    cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # constant decay
+    cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
+
+    print('solver')
+    print(cfg.SOLVER)
+
+    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128   
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.DEVICE = "cpu"  
-    cfg.OUTPUT_DIR = OUTPUT_DIR
-    cfg.TEST.DETECTIONS_PER_IMAGE = 2000
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
-    
 
+    cfg.OUTPUT_DIR = OUTPUT_DIR
+    
+    cfg.TEST.DETECTIONS_PER_IMAGE = 3000
+    
     return cfg
 
 def clear_data():
@@ -137,6 +143,7 @@ if __name__ == '__main__':
     # clear_data()
     # preprocess_data_coco()
     visualize_true_labels(COCO_VAL_ANNOTATION, set_type='val')
+    visualize_true_labels(COCO_TEST_ANNOTATION, set_type='test')
 
     # TRAIN STEPS: 
 
@@ -151,8 +158,7 @@ if __name__ == '__main__':
         entity=WANDB_ENTITY, 
         project=WANDB_PROJECT, 
         name=WANDB_RUN_NAME,
-        dir='/output',
-        # mode='offline'
+        dir='/output'
     )
 
     run.config.update({
@@ -161,23 +167,25 @@ if __name__ == '__main__':
         "max_iter": cfg.SOLVER.MAX_ITER
     })
 
-    model = WandBTrainer(cfg)
-    model.resume_or_load(resume=False)
+    # TODO: remove when training
+    # cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth" 
+
+    model_trainer = Trainer(cfg)
+    model_trainer.resume_or_load(resume=False)
 
     try:
-        model.train()
+        model_trainer.train()
     except Exception as e:
         print('Training stopped due to:' + str(e))
 
-    # TODO: Fix evaluation method
     try:
-        final_val_metrics = model.evaluate()
+        final_val_metrics = model_trainer.evaluate()
         run.log(final_val_metrics)
     except Exception as e:
         print('Validation run stopped due to:' + str(e))
 
     try:
-        final_test_metrics = model.test()
+        final_test_metrics = model_trainer.test()
         run.log(final_test_metrics)
     except Exception as e:
         print('Validation run stopped due to:' + str(e))

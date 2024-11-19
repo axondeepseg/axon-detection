@@ -8,14 +8,15 @@ import torch
 from detectron2.engine import DefaultTrainer, hooks
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
+from detectron2.engine import DefaultPredictor
+# from detectron2.evaluation.coco_evaluation import _evaluate_box_proposals
 
 from retinaNet.constants.data_file_constants import COCO_TEST_ANNOTATION, COCO_VAL_ANNOTATION, COCO_VAL_IMAGES
 from retinaNet.constants.config_constants import CONF_THRESHOLD
 
-from detectron2.engine import DefaultPredictor
 
 
-class WandBTrainer(DefaultTrainer):
+class Trainer(DefaultTrainer):
     def __init__(self, cfg):
         super().__init__(cfg)
         self.cfg = cfg
@@ -49,6 +50,8 @@ class WandBTrainer(DefaultTrainer):
         image_paths = glob.glob(os.path.join(COCO_VAL_IMAGES, "*.png"))
         
         for image_path in image_paths:
+            print('image path')
+            print(image_path)
             img = cv2.imread(image_path)
             outputs = self.predictor(img)
             instances = outputs["instances"].to("cpu")
@@ -60,12 +63,15 @@ class WandBTrainer(DefaultTrainer):
             print(f'\n Boxes')
             print(len(boxes))
 
+            print('scores len')
+            print(len(scores))
+
             for i, box in enumerate(boxes):
                 if scores[i] > CONF_THRESHOLD:
                     x1, y1, x2, y2 = map(int, box)
                     cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-            output_path = os.path.join('output_predictions', os.path.basename(image_path))
+            output_path = os.path.join('output_predictions', os.path.basename(image_path)+ "_lr_decay")
             cv2.imwrite(output_path, img)
 
 
@@ -75,55 +81,43 @@ class WandBTrainer(DefaultTrainer):
         Log evaluation metrics to WandB.
         """
 
-        print('AR BOX')
-        print(results["bbox"]["AR"])
+        # print('AR BOX')
+        # print(results["bbox"]["AR"])
 
         metrics = {
             f"{split_name}_mAP": results["bbox"]["AP"], 
             f"{split_name}_AP50": results["bbox"]["AP50"],
             f"{split_name}_AP75": results["bbox"]["AP75"],
-            f"{split_name}_AR": results["bbox"]["AR"],    
+            # f"{split_name}_AR": results["bbox"]["AR"],    
         }
         
         # Calculate F1 Score based on AP and AR
         precision = results["bbox"]["AP"] 
-        recall = results["bbox"]["AR"]  
-        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        metrics[f"{split_name}_F1"] = f1_score
+        # recall = results["bbox"]["AR"]  
+        # f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        # metrics[f"{split_name}_F1"] = f1_score
         
         wandb.log(metrics)
 
-        # Plot F1 score
-        plt.plot(f1_score, marker="o", label=f"{split_name}_F1 Score")
-        plt.title(f"{split_name} F1 Score Over Epochs")
-        plt.xlabel("Epochs")
-        plt.ylabel("F1 Score")
-        plt.legend()
-        wandb.log({f"{split_name}_F1_Score_Plot": wandb.Image(plt)})
-        plt.clf() 
-
-        for key, value in metrics.items():
-            plt.plot(self.storage.iter, value, "go", label=key)
-            plt.title(f"{key} Over Iterations")
-            plt.xlabel("Epochs")
-            plt.ylabel(key)
-            plt.legend()
-            plt.savefig(f"{split_name}_{key}_over_time.png")
-            plt.clf()
-
 
     def evaluate(self):
-        evaluator = COCOEvaluator(COCO_VAL_ANNOTATION, output_dir="./output/")
+        evaluator = COCOEvaluator(COCO_VAL_ANNOTATION, output_dir="./output/", max_dets_per_image=2000)
         val_loader = build_detection_test_loader(self.cfg, COCO_VAL_ANNOTATION)
+
+        print('\nmodel looks like:')
+        print(self.model)
 
         # FIXME: Error is thrown during inference
         results = inference_on_dataset(self.model, val_loader, evaluator)
+
+        # evaluator._eval_box_proposals(evaluator._predictions)
+        
         self.log_metrics(results, 'val')
         wandb.log(results)
         return results
     
     def test(self):
-        test_evaluator = COCOEvaluator(COCO_TEST_ANNOTATION, output_dir="./output/")
+        test_evaluator = COCOEvaluator(COCO_TEST_ANNOTATION, output_dir="./output/", max_dets_per_image=2000)
         test_loader = build_detection_test_loader(self.cfg, COCO_TEST_ANNOTATION)
 
         test_results = inference_on_dataset(self.model, test_loader, test_evaluator,)
