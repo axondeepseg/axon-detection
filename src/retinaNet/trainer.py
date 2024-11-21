@@ -71,7 +71,7 @@ class Trainer(DefaultTrainer):
                     x1, y1, x2, y2 = map(int, box)
                     cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-            output_path = os.path.join('output_predictions', os.path.basename(image_path)+ "_lr_decay")
+            output_path = os.path.join('output_predictions', "modified_params_" + os.path.basename(image_path))
             cv2.imwrite(output_path, img)
 
 

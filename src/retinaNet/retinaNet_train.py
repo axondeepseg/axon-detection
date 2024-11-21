@@ -63,26 +63,35 @@ def configure_detectron():
 
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 60 # (2*100)/8 = 60 epochs 
-    # cfg.SOLVER.STEPS = [] # no learning decay (lr remains stable)
+    cfg.SOLVER.MAX_ITER = 160 # (2*140)/8 = 60 epochs 
+    cfg.SOLVER.STEPS = [40, 60] # no learning decay (lr remains stable)
     # cfg.SOLVER.STEPS = [20, 30] # change according to max iter
-    cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # constant decay
-    cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
+    # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
+    cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # scheduler for early warmup
+    cfg.SOLVER.WARMUP_ITERS = 20 
+    cfg.SOLVER.CLIP_GRADIENTS.ENABLED = True
+    cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE = 'norm'
 
-    print('solver')
+    print('\n -- solver')
     print(cfg.SOLVER)
 
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
-    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128   
+    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.DEVICE = "cpu"  
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
+    cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 2.5
+    cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
+    # cfg.MODEL.ANCHOR_GENERATOR
+
+    print('\n -- model')
+    print(cfg.MODEL)
 
     cfg.OUTPUT_DIR = OUTPUT_DIR
-    
-    cfg.TEST.DETECTIONS_PER_IMAGE = 3000
+    cfg.TEST.DETECTIONS_PER_IMAGE = 2000
     
     return cfg
+
 
 def clear_data():
     split_file = SEM_DATA_SPLIT
@@ -162,9 +171,26 @@ if __name__ == '__main__':
     )
 
     run.config.update({
-        "learning_rate": cfg.SOLVER.BASE_LR,
+        "train_dataset": cfg.DATASETS.TRAIN,
+        "test_dataset": cfg.DATASETS.TEST,
+        "num_workers": cfg.DATALOADER.NUM_WORKERS,
         "batch_size": cfg.SOLVER.IMS_PER_BATCH,
-        "max_iter": cfg.SOLVER.MAX_ITER
+        "base_lr": cfg.SOLVER.BASE_LR,
+        "max_iter": cfg.SOLVER.MAX_ITER,
+        "lr_steps": cfg.SOLVER.STEPS,
+        "lr_scheduler": cfg.SOLVER.LR_SCHEDULER_NAME,
+        "warmup_iters": cfg.SOLVER.WARMUP_ITERS,
+        "clip_gradients_enabled": cfg.SOLVER.CLIP_GRADIENTS.ENABLED,
+        "clip_type": cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE,
+        "weights": cfg.MODEL.WEIGHTS,
+        "roi_heads_batch_size": cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE,
+        "num_classes": cfg.MODEL.ROI_HEADS.NUM_CLASSES,
+        "device": cfg.MODEL.DEVICE,
+        "score_threshold": cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST,
+        "focal_loss_alpha": cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA,
+        "focal_loss_gamma": cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA,
+        "output_dir": cfg.OUTPUT_DIR,
+        "detections_per_image": cfg.TEST.DETECTIONS_PER_IMAGE
     })
 
     # TODO: remove when training
