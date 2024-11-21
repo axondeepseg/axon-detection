@@ -65,7 +65,6 @@ def configure_detectron():
     cfg.SOLVER.BASE_LR = 0.001
     cfg.SOLVER.MAX_ITER = 160 # (2*140)/8 = 60 epochs 
     cfg.SOLVER.STEPS = [40, 60] # no learning decay (lr remains stable)
-    # cfg.SOLVER.STEPS = [20, 30] # change according to max iter
     # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR" # scheduler for early warmup
     cfg.SOLVER.WARMUP_ITERS = 20 
@@ -80,9 +79,15 @@ def configure_detectron():
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.DEVICE = "cpu"  
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
-    cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 2.5
+    cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 5
     cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
-    # cfg.MODEL.ANCHOR_GENERATOR
+
+    # TODO: Find right anchor boxes through kera script
+    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
+
+    # This makes boxes ++ faster, but no boxes shown
+    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
+
 
     print('\n -- model')
     print(cfg.MODEL)
@@ -167,7 +172,8 @@ if __name__ == '__main__':
         entity=WANDB_ENTITY, 
         project=WANDB_PROJECT, 
         name=WANDB_RUN_NAME,
-        dir='/output'
+        dir='/output',
+        # mode='offline'
     )
 
     run.config.update({
@@ -189,6 +195,7 @@ if __name__ == '__main__':
         "score_threshold": cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST,
         "focal_loss_alpha": cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA,
         "focal_loss_gamma": cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA,
+        "anchor_aspect_ratio": cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS,
         "output_dir": cfg.OUTPUT_DIR,
         "detections_per_image": cfg.TEST.DETECTIONS_PER_IMAGE
     })

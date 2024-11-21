@@ -43,7 +43,7 @@ class Trainer(DefaultTrainer):
         # PREDICTION part for visualization of result
 
         current_lr = self.optimizer.param_groups[0]["lr"]
-        print(f"\nLearning rate at epoch {current_iteration}: {current_lr}")
+        print(f"\nLR at iteration={current_iteration} & epoch={current_iteration // 8}: {current_lr}")
 
         self.predictor.model.load_state_dict(self.model.state_dict())
 
@@ -81,21 +81,11 @@ class Trainer(DefaultTrainer):
         Log evaluation metrics to WandB.
         """
 
-        # print('AR BOX')
-        # print(results["bbox"]["AR"])
-
         metrics = {
             f"{split_name}_mAP": results["bbox"]["AP"], 
             f"{split_name}_AP50": results["bbox"]["AP50"],
             f"{split_name}_AP75": results["bbox"]["AP75"],
-            # f"{split_name}_AR": results["bbox"]["AR"],    
         }
-        
-        # Calculate F1 Score based on AP and AR
-        precision = results["bbox"]["AP"] 
-        # recall = results["bbox"]["AR"]  
-        # f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        # metrics[f"{split_name}_F1"] = f1_score
         
         wandb.log(metrics)
 
@@ -109,8 +99,6 @@ class Trainer(DefaultTrainer):
 
         # FIXME: Error is thrown during inference
         results = inference_on_dataset(self.model, val_loader, evaluator)
-
-        # evaluator._eval_box_proposals(evaluator._predictions)
         
         self.log_metrics(results, 'val')
         wandb.log(results)
