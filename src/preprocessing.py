@@ -1,9 +1,12 @@
 import subprocess
+from retinaNet.constants.data_file_constants import OUTPUT_TRUE_LABELS
 import utils
 import cv2
 import os
 import shutil
 import json
+import numpy as np
+
 from tqdm import tqdm
 from pathlib import Path
 from constants.data_constants import SEM_DATASET_URL
@@ -191,7 +194,10 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     save_yolo_dset(yolo_test_set, test_images_dir, test_masks_dir)
 
 
-def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
+def preprocess_data_coco(
+    data_dir: str = "data_axondeepseg_sem",
+    data_type: str = "sem",
+):
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
 
     Steps:
@@ -203,8 +209,10 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
     6. Save the annotations and images in the appropriate COCO directories.
     """
 
-    processed_images_dir = "data-coco/images"
-    processed_annotations_dir = "data-coco/annotations"
+    print("preprocessing coco")
+
+    processed_images_dir = f"data-coco/{data_type}/images"
+    processed_annotations_dir = f"data-coco/{data_type}/annotations"
 
     train_images_dir = os.path.join(processed_images_dir, "train")
     val_images_dir = os.path.join(processed_images_dir, "val")
@@ -236,7 +244,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
     common_annotations = {
         "categories": [
-            {"id": 1, "name": "axon_myelin", "supercategory": "cell"},
+            {"id": 1, "name": "axon", "supercategory": "cell"},
             {"id": 0, "name": "background", "supercategory": "background"},
         ],
     }
@@ -257,16 +265,24 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
         if subject == "sidecar":
             continue
 
+        print("subject")
+        print(subject)
+
         pixel_size = data_dict[subject]["sidecar"]
         for sample in data_dict[subject].keys():
             if sample == "sidecar":
                 continue
             img_path = data_dict[subject][sample]["image"]
-            axon_myelin_seg_path = data_dict[subject][sample]["myelin"]
+            axon_seg_path = data_dict[subject][sample]["axon"]
             image_name = f"{subject}_{sample}.png"
 
-            img = utils.load_bids_image(img_path, pixel_size)
-            img = utils.normalize_and_window(img)
+            axon_test_path = cv2.imread(img_path)
+            cv2.imwrite("TEST/images.png", axon_test_path)
+
+            img = utils.load_bids_image(img_path)
+            # img = utils.normalize_and_window(img)
+
+            cv2.imwrite("TEST2/images.png", img)
 
             img_height, img_width = img.shape[:2]
             image_info = {
@@ -277,10 +293,15 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
             }
 
             # Load segmentation masks and find regions
-            axon_myelin_seg = cv2.imread(axon_myelin_seg_path, cv2.IMREAD_GRAYSCALE)
-            axon_myelin_seg_regions = utils.find_regions(axon_myelin_seg)
+
+            axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
+
+            axon_seg = (axon_seg / axon_seg.max() * 255).astype(np.uint8)
+            # cv2.imwrite("TEST/images.png", axon_seg)
+
+            axon_seg_regions = utils.find_regions(axon_seg)
             axon_myelin_annotations = []
-            for region in axon_myelin_seg_regions:
+            for region in axon_seg_regions:
                 minr, minc, maxr, maxc = region.bbox
                 bbox_width = maxc - minc
                 bbox_height = maxr - minr
@@ -303,7 +324,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 
             image_id += 1
 
-    data_split = split(image_mask_pairs)
+    data_split = split(image_mask_pairs, split_file="data_sem_split.json")
 
     save_split(
         [entry for entry in image_mask_pairs if entry[0] in data_split["train"]],
@@ -333,6 +354,10 @@ def save_split(split_data, images_dir, annotations):
     """Saves images to the specified directory and appends image and annotation metadata to the COCO annotations structure."""
     for image_name, img, image_info, axon_annotations in split_data:
         # Save the image in the appropriate directory
+
+        print("PATHHH")
+        print(os.path.join(images_dir, image_name))
+
         cv2.imwrite(os.path.join(images_dir, image_name), img)
 
         # Add image and annotations to COCO structure
@@ -348,7 +373,7 @@ if __name__ == "__main__":
     # else:
     #     print(f"{split_file} does not exist.")
 
-    clear_directories_yolo()
+    # clear_directories_yolo()
     clear_directories_coco()
-    preprocess_data_yolo()
-    preprocess_data_coco()
+    # preprocess_data_yolo()
+    preprocess_data_coco("data_axondeepseg_sem", "sem")
