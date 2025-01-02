@@ -25,6 +25,7 @@ class WandbTrainer:
             batch=self.cfg['batch'],
             project=self.cfg['project'],
             name=self.cfg['name'],
+            patience=1000, # to prevent early stopping if necessary
             exist_ok=True
         )
         
@@ -48,8 +49,11 @@ class WandbTrainer:
         wandb.init(mode="disabled")
         wandb.log({"training_time": training_time})
 
-        # self.log_inference_time(test_dir="src/data-yolo/images/test") # log inference time on test set
-        self.visualize_predictions(test_dir="src/data-yolo/images/test", conf=0.25) # visualize predictions on test set
+        # log inference time on test set
+        # self.log_inference_time(test_dir="src/data-yolo/images/test")
+
+        # visualize predictions on test set
+        self.visualize_predictions(test_dir="src/data-yolo/images/test") 
 
 
     def log_inference_time(self, test_dir):
@@ -64,20 +68,22 @@ class WandbTrainer:
         wandb.log({"inference_time": inference_time})
         print(f"Inference time on test set: {inference_time:.2f} seconds")
 
-    def visualize_predictions(self, test_dir, conf=0.25):
+    def visualize_predictions(self, test_dir, conf=0.3):
         output_directory = 'output_predictions'
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
-        
+
         for image_path in image_paths:
             print("Predicting on image:", image_path)
+            
             results = self.model.predict(image_path, save=False, conf=conf)
 
             for result in results:
                 print("Visualizing prediction...")
-                img = result.orig_img 
+                img = result.orig_img
+
                 for box in result.boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     confidence = box.conf[0]
@@ -90,8 +96,62 @@ class WandbTrainer:
                     print(f"Saved prediction image to {output_path}")
                 else:
                     print(f"Failed to save prediction image to {output_path}")
-                
+
                 wandb.log({"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]})
-        
+
         print("Predictions visualized and logged to wandb.")
+
+
+    def visualize_ground_truth(self, test_dir, labels_dir):
+        output_directory = 'output_ground_truth'
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        image_paths = glob.glob(os.path.join(test_dir, "*.png"))
+
+        for image_path in image_paths:
+            print("Visualizing ground truth for image:", image_path)
+            
+            # reading the corresponding label file
+            label_file = os.path.join(labels_dir, os.path.splitext(os.path.basename(image_path))[0] + ".txt")
+            if not os.path.exists(label_file):
+                print(f"No label file found for {image_path}, skipping...")
+                continue
+            
+            # loading image
+            img = cv2.imread(image_path)
+            if img is None:
+                print(f"Failed to load image {image_path}, skipping...")
+                continue
+
+            height, width, _ = img.shape
+
+            # reading label file and draw bounding boxes
+            with open(label_file, "r") as f:
+                for line in f:
+                    class_id, x_center, y_center, box_width, box_height = map(float, line.strip().split())
+                    
+                    # converting YOLO format to pixel coordinates
+                    x1 = int((x_center - box_width / 2) * width)
+                    y1 = int((y_center - box_height / 2) * height)
+                    x2 = int((x_center + box_width / 2) * width)
+                    y2 = int((y_center + box_height / 2) * height)
+
+                    # drawing rectangle and class label
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            # saving the image with ground truth visualization
+            output_path = os.path.join(output_directory, os.path.basename(image_path))
+            success = cv2.imwrite(output_path, img)
+            if success:
+                print(f"Saved ground truth image to {output_path}")
+            else:
+                print(f"Failed to save ground truth image to {output_path}")
+
+            # logging to wandb
+            wandb.log({"Ground Truth": [wandb.Image(img, caption=os.path.basename(image_path))]})
+
+        print("Ground truth visualized and logged to wandb.")
+
+
 
