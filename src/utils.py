@@ -77,15 +77,6 @@ def resize_and_pad(img, target_size=(416, 416)):
     img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
     return img
 
-def normalize_and_window(img):
-    """Normalizes and applies intensity windowing to an image."""
-    img = (img - img.min()) / (img.max() - img.min())  # Normalize to [0, 1]
-    low_percentile, high_percentile = np.percentile(img, (2, 98))
-    img = np.clip(img, low_percentile, high_percentile)
-    img = (img - img.min()) / (img.max() - img.min())  # Renormalize
-    img = (img * 255).astype(np.uint8)  # Scale to [0, 255]
-    return img
-
 def find_regions(img):
     """Finds connected regions directly from a binary segmentation mask."""
     # Ensure the image is of integer type for labeling
