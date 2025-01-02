@@ -106,26 +106,19 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             label_name = f"{subject}_{sample}.txt"
 
             # Load and preprocess the images and the segmentation mask
-            img = utils.load_bids_image(img_path, pixel_size)
-            img = utils.normalize_and_window(img)
+            print(f"Processing {image_name}, at {img_path}")
+            img = utils.load_bids_image(img_path)
 
-            # Load segmentation masks and find regions
+            # Load segmentation masks and find regions + Process Axon
             axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
             axon_seg_regions = utils.find_regions(axon_seg)
-            for i, region in enumerate(axon_seg_regions):
-                minr, minc, maxr, maxc = region.bbox
-                bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxc, "ymax": maxr, "class": "axon"})
-
-            # Process Myelin
-            myelin_seg = cv2.imread(myelin_seg_path, cv2.IMREAD_GRAYSCALE)
-            myelin_seg_regions = utils.find_regions(myelin_seg)
             with open(os.path.join(processed_masks_dir, label_name), "w") as file:
-                for i, region in enumerate(myelin_seg_regions):
+                for i, region in enumerate(axon_seg_regions):
                     minr, minc, maxr, maxc = region.bbox
-                    width,height = region.axis_major_length, region.axis_minor_length
-                    bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxr, "ymax": maxc, "class": "myelin"})
+                    bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxc, "ymax": maxr, "class": "axon"})
 
                     # Normalize coordinates
+                    width, height = region.axis_major_length, region.axis_minor_length
                     img_height, img_width = img.shape[:2]
 
                     x_center = (minc + maxc) / 2 / img_width
@@ -133,13 +126,13 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
                     width = (maxc - minc) / img_width
                     height = (maxr - minr) / img_height
 
-                    # Write axonmyelin class (0) to the label file
+                    # Write class 0 to the label file
                     file.write('0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(x_center, y_center, width, height))
 
             # Add image and Masks paths to the list for split
             image_mask_pairs.append((image_name, img, os.path.join(processed_masks_dir, label_name)))
 
-    data_split = split(image_mask_pairs)
+    data_split = split(image_mask_pairs, "data_tem_split.json")
     
     processed_image_names_yolo = set()
 
@@ -321,15 +314,7 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
         json.dump(test_annotations, f)
 
 
-if __name__ == '__main__':
-    split_file = 'data_sem_split.json'
-    if os.path.exists(split_file):
-        os.remove(split_file)
-        print(f"{split_file} has been deleted.")
-    else:
-        print(f"{split_file} does not exist.")
-    
+if __name__ == '__main__':    
     clear_directories_yolo()
-    clear_directories_coco()
-    preprocess_data_yolo()
-    preprocess_data_coco()
+    # dataset needs to be in src folder like this: axon-detection/src/dataset
+    preprocess_data_yolo("data_axondeepseg_tem")
