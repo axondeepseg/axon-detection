@@ -9,7 +9,13 @@ import numpy as np
 
 from tqdm import tqdm
 from pathlib import Path
-from constants.data_constants import SEM_DATASET_URL
+from constants.data_constants import (
+    SEM,
+    SEM_DATA_NAME,
+    SEM_DATASET_URL,
+    TEM,
+    TEM_DATA_NAME,
+)
 
 from utils import split, clear_directories_yolo, clear_directories_coco
 
@@ -195,7 +201,6 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
 
 
 def preprocess_data_coco(
-    data_dir: str = "data_axondeepseg_sem",
     data_type: str = "sem",
 ):
     """Preprocesses the loaded BIDS data for object detection and converts it into COCO format.
@@ -210,6 +215,10 @@ def preprocess_data_coco(
     """
 
     print("preprocessing coco")
+    if data_type == TEM:
+        data_dir = TEM_DATA_NAME
+    if data_type == SEM:
+        data_dir = SEM_DATA_NAME
 
     processed_images_dir = f"data-coco/{data_type}/images"
     processed_annotations_dir = f"data-coco/{data_type}/annotations"
@@ -279,8 +288,11 @@ def preprocess_data_coco(
             axon_test_path = cv2.imread(img_path)
             cv2.imwrite("TEST/images.png", axon_test_path)
 
-            img = utils.load_bids_image(img_path)
+            # FIXME: Remove normalize method since we removed these lines for TEM
+            # img = utils.load_bids_image(img_path, pixel_size)
             # img = utils.normalize_and_window(img)
+
+            img = utils.load_bids_image(img_path)
 
             cv2.imwrite("TEST2/images.png", img)
 
@@ -376,4 +388,4 @@ if __name__ == "__main__":
     # clear_directories_yolo()
     clear_directories_coco()
     # preprocess_data_yolo()
-    preprocess_data_coco("data_axondeepseg_sem", "sem")
+    preprocess_data_coco(TEM)
