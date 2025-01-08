@@ -1,12 +1,18 @@
-from ..constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
-from ..yolo.wandb_trainer import WandbTrainer
+import sys
+import os
+
+SRC_PATH = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(SRC_PATH)
+
+from constants.wandb_yolo_constants import WANDB_PROJECT, WANDB_RUN_NAME
+from yolo.wandb_trainer import WandbTrainer
   
 
 if __name__ == "__main__":
 
     config = {
         # NOTE: "datasets_dir" in settings.json of Ultralytics should look like this:  "\\axon-detection"
-        'data': 'src/data-yolo/data.yaml',
+        'data': os.path.abspath(os.path.join(SRC_PATH, 'data-yolo', 'data.yaml')),
         'epochs': 250,
         'imgsz': 640,
         'optimizer': 'adam',
