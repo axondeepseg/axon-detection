@@ -4,7 +4,7 @@ from ultralytics import YOLO
 import glob
 import os
 import cv2
-from ..constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
+from constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
 
 class WandbTrainer:
     def __init__(self, model_path, config):
