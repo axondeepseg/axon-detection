@@ -4,13 +4,13 @@ import os
 SRC_PATH = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(SRC_PATH)
 
+from constants.wandb_yolo_constants import WANDB_PROJECT, WANDB_RUN_NAME
+from yolo.wandb_trainer import WandbTrainer
+
 DATA_PATH = os.path.abspath(os.path.join(SRC_PATH, 'data-yolo'))
 DATA_YAML_PATH = os.path.join(DATA_PATH, 'data.yaml')
 IMAGES_PATH = os.path.join(DATA_PATH, 'images', 'test')
 LABELS_PATH = os.path.join(DATA_PATH, 'labels', 'test')
-
-from constants.wandb_yolo_constants import WANDB_PROJECT, WANDB_RUN_NAME
-from yolo.wandb_trainer import WandbTrainer
   
 
 if __name__ == "__main__":
@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)    
     trainer.run_step()
-    
+
     # example usage to visualize ground truth - change lines 9 and 10 if you want to see the ground truths for another set
     # trainer.visualize_ground_truth(test_dir=IMAGES_PATH, labels_dir=LABELS_PATH)
     

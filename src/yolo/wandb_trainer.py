@@ -6,6 +6,8 @@ import os
 import cv2
 from constants.wandb_yolo_constants import WANDB_ENTITY, WANDB_PROJECT, WANDB_RUN_NAME, WANDB_RUN_ID
 
+IMAGES_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data-yolo', 'images', 'test')
+
 class WandbTrainer:
     def __init__(self, model_path, config):
         self.model = YOLO(model_path)
@@ -50,10 +52,10 @@ class WandbTrainer:
         wandb.log({"training_time": training_time})
 
         # log inference time on test set
-        # self.log_inference_time(test_dir="src/data-yolo/images/test")
+        # self.log_inference_time(test_dir=IMAGES_PATH)
 
         # visualize predictions on test set
-        self.visualize_predictions(test_dir="src/data-yolo/images/test") 
+        self.visualize_predictions(test_dir=IMAGES_PATH) 
 
 
     def log_inference_time(self, test_dir):
@@ -68,7 +70,7 @@ class WandbTrainer:
         wandb.log({"inference_time": inference_time})
         print(f"Inference time on test set: {inference_time:.2f} seconds")
 
-    def visualize_predictions(self, test_dir, conf=0.3):
+    def visualize_predictions(self, test_dir, conf=0.6):
         output_directory = 'output_predictions'
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
