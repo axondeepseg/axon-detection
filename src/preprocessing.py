@@ -63,16 +63,16 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
     - Class numbers should be zero-indexed
     """
 
-    # TODO: Issue of raw path
-    processed_images_dir = "data-yolo/images"
-    processed_masks_dir = "data-yolo/labels"
+    PROCESSED_IMAGES_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'data-yolo', 'images')
+    PROCESSED_MASKS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'data-yolo', 'labels')
+    print(PROCESSED_IMAGES_PATH)
 
-    train_images_dir = os.path.join(processed_images_dir, "train")
-    train_masks_dir = os.path.join(processed_masks_dir, "train")
-    val_images_dir = os.path.join(processed_images_dir, "val")
-    val_masks_dir = os.path.join(processed_masks_dir, "val")
-    test_images_dir = os.path.join(processed_images_dir, "test")
-    test_masks_dir = os.path.join(processed_masks_dir, "test")
+    train_images_dir = os.path.join(PROCESSED_IMAGES_PATH, "train")
+    train_masks_dir = os.path.join(PROCESSED_MASKS_PATH, "train")
+    val_images_dir = os.path.join(PROCESSED_IMAGES_PATH, "val")
+    val_masks_dir = os.path.join(PROCESSED_MASKS_PATH, "val")
+    test_images_dir = os.path.join(PROCESSED_IMAGES_PATH, "test")
+    test_masks_dir = os.path.join(PROCESSED_MASKS_PATH, "test")
 
     if data_dir == "data_axondeepseg_sem":
         download_default_sem_dataset()
@@ -112,7 +112,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             # Load segmentation masks and find regions + Process Axon
             axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
             axon_seg_regions = utils.find_regions(axon_seg)
-            with open(os.path.join(processed_masks_dir, label_name), "w") as file:
+            with open(os.path.join(PROCESSED_MASKS_PATH, label_name), "w") as file:
                 for i, region in enumerate(axon_seg_regions):
                     minr, minc, maxr, maxc = region.bbox
                     bbox_data.append({"image_name": f"{subject}_{sample}.png", "xmin": minc, "ymin": minr, "xmax": maxc, "ymax": maxr, "class": "axon"})
@@ -130,9 +130,9 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
                     file.write('0 {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(x_center, y_center, width, height))
 
             # Add image and Masks paths to the list for split
-            image_mask_pairs.append((image_name, img, os.path.join(processed_masks_dir, label_name)))
+            image_mask_pairs.append((image_name, img, os.path.join(PROCESSED_MASKS_PATH, label_name)))
 
-    data_split = split(image_mask_pairs, "data_tem_split.json")
+    data_split = split(image_mask_pairs, os.path.join(data_dir, '.json'))
     
     processed_image_names_yolo = set()
 
@@ -317,4 +317,4 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 if __name__ == '__main__':    
     clear_directories_yolo()
     # dataset needs to be in src folder like this: axon-detection/src/dataset
-    preprocess_data_yolo("data_axondeepseg_tem")
+    preprocess_data_yolo("data_axondeepseg_sem")
