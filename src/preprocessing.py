@@ -47,7 +47,7 @@ def download_default_sem_dataset():
     if not os.path.exists("data_axondeepseg_sem"):
         subprocess.run(["git", "clone", SEM_DATASET_URL])
 
-def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
+def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem", split_file='data_sem_split.json'):
     """Preprocesses the loaded BIDS data for object detection.
 
     Steps:
@@ -132,7 +132,7 @@ def preprocess_data_yolo(data_dir: str = "data_axondeepseg_sem"):
             # Add image and Masks paths to the list for split
             image_mask_pairs.append((image_name, img, os.path.join(PROCESSED_MASKS_PATH, label_name)))
 
-    data_split = split(image_mask_pairs, os.path.join(data_dir, '.json'))
+    data_split = split(image_mask_pairs, split_file)
     
     processed_image_names_yolo = set()
 
@@ -317,4 +317,4 @@ def preprocess_data_coco(data_dir: str = "data_axondeepseg_sem"):
 if __name__ == '__main__':    
     clear_directories_yolo()
     # dataset needs to be in src folder like this: axon-detection/src/dataset
-    preprocess_data_yolo("data_axondeepseg_sem")
+    preprocess_data_yolo(data_dir="data_axondeepseg_tem", split_file='data_tem_split.json')
