@@ -139,13 +139,11 @@ class Trainer(DefaultTrainer):
         wandb.log(results)
         return results
 
-    def visualize_predictions(cfg, test_dir, conf_threshold=CONF_THRESHOLD):
+    def visualize_predictions(self, test_dir, conf_threshold=CONF_THRESHOLD):
         output_directory = "output_predictions"
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_threshold
-        predictor = DefaultPredictor(cfg)
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
 
         for image_path in image_paths:
@@ -153,7 +151,7 @@ class Trainer(DefaultTrainer):
             print("Predicting on image:", image_path)
 
             start_time = time.time()
-            outputs = predictor(img)
+            outputs = self.predictor(img)
             inference_time = time.time() - start_time
 
             wandb.log({"Inference Time (s)": inference_time})
