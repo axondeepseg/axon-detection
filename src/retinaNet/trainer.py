@@ -139,48 +139,107 @@ class Trainer(DefaultTrainer):
         wandb.log(results)
         return results
 
-    def visualize_predictions(self, test_dir, conf_threshold=CONF_THRESHOLD):
-        output_directory = "output_predictions"
+    def visualize_predictions(
+        self,
+        test_dir,
+        conf_threshold=CONF_THRESHOLD,
+        output_directory="output_predictions",
+    ):
+        """
+        Visualizes predictions on test images, saves the results, and logs them to WandB.
+
+        Args:
+            test_dir (str): Directory containing test images.
+            conf_threshold (float): Confidence threshold for filtering predictions.
+            output_directory (str): Directory to save prediction results.
+        """
+        # Create the output directory if it doesn't exist
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
+        # Load the model's state dict into the predictor
+        self.predictor.model.load_state_dict(self.model.state_dict())
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
 
         for image_path in image_paths:
             img = cv2.imread(image_path)
+            if img is None:
+                print(f"Failed to load image: {image_path}")
+                continue
+
             print("Predicting on image:", image_path)
 
+            # Perform inference and measure time
             start_time = time.time()
             outputs = self.predictor(img)
             inference_time = time.time() - start_time
 
+            # Log inference time
             wandb.log({"Inference Time (s)": inference_time})
             print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
 
-            instances = outputs["instances"].to("cpu")
-            boxes = instances.pred_boxes.tensor.numpy()
-            scores = instances.scores.numpy()
+            # Retrieve and process predictions
+            instances = outputs.get("instances")
+            if instances is None:
+                print(f"No predictions found for image: {image_path}")
+                continue
 
-            print("boxes")
-            print(len(boxes))
+            instances = instances.to("cpu")
+            boxes = (
+                instances.pred_boxes.tensor.numpy()
+                if instances.has("pred_boxes")
+                else []
+            )
+            scores = instances.scores.numpy() if instances.has("scores") else []
 
-            # Normalize scores to [0, 1] for color mapping
-            min_score = np.min(scores)
-            max_score = np.max(scores)
-            normalized_scores = (scores - min_score) / (max_score - min_score)
+            print(f"Number of boxes detected: {len(boxes)}")
 
+            # Draw bounding boxes and labels on the image
             for i, box in enumerate(boxes):
                 if scores[i] > conf_threshold:
                     x1, y1, x2, y2 = map(int, box)
 
-                    # Compute color based on normalized score
-                    color = plt.cm.Blues(normalized_scores[i])[:3]  # RGB tuple
-                    color = tuple(
-                        int(c * 255) for c in color[::-1]
-                    )  # Convert to BGR and scale to 0-255
+                    # Create a gradient color from green to blue based on the confidence score
+                    green = int(255 * (1 - scores[i]))
+                    blue = int(255 * scores[i])
+                    color = (0, green, blue)
 
+                    # Draw the bounding box
                     cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
 
+                    # Add the confidence score label
+                    label = f"{scores[i]:.2f}"
+                    font_scale = 0.5
+                    font_thickness = 1
+                    text_size = cv2.getTextSize(
+                        label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
+                    )[0]
+                    text_x = x1
+                    text_y = y1 - 5  # Position above the box
+                    text_y = max(
+                        text_y, 10
+                    )  # Ensure the text is not too close to the top
+
+                    # Draw a filled rectangle for the text background
+                    cv2.rectangle(
+                        img,
+                        (text_x, text_y - text_size[1]),
+                        (text_x + text_size[0], text_y),
+                        color,
+                        -1,
+                    )
+                    # Put the text on the image
+                    cv2.putText(
+                        img,
+                        label,
+                        (text_x, text_y - 2),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        font_scale,
+                        (255, 255, 255),  # White text
+                        font_thickness,
+                    )
+
+            # Save the prediction image
             output_path = os.path.join(output_directory, os.path.basename(image_path))
             success = cv2.imwrite(output_path, img)
             if success:
@@ -188,6 +247,7 @@ class Trainer(DefaultTrainer):
             else:
                 print(f"Failed to save prediction image to {output_path}")
 
+            # Log the prediction image to WandB
             wandb.log(
                 {"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]}
             )
