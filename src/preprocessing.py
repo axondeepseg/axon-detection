@@ -217,8 +217,10 @@ def preprocess_data_coco(
     print("preprocessing coco")
     if data_type == TEM:
         data_dir = TEM_DATA_NAME
+        split_file = "data_tem_split.json"
     if data_type == SEM:
         data_dir = SEM_DATA_NAME
+        split_file = "data_sem_split.json"
 
     processed_images_dir = f"data-coco/{data_type}/images"
     processed_annotations_dir = f"data-coco/{data_type}/annotations"
@@ -270,15 +272,19 @@ def preprocess_data_coco(
     test_annotations["images"] = []
     test_annotations["annotations"] = []
 
+    # for every mouse subject
     for subject in tqdm(data_dict.keys(), desc="Loading dataset for COCO conversion."):
         if subject == "sidecar":
             continue
 
-        print("subject")
-        print(subject)
+        print("\n\nSubject")
 
-        pixel_size = data_dict[subject]["sidecar"]
+        print(f"- Len samples: {len(data_dict[subject])}")
+
+        # for every sample of the mouse subject
         for sample in data_dict[subject].keys():
+            print(f"\nSAMPLE {sample}")
+
             if sample == "sidecar":
                 continue
             img_path = data_dict[subject][sample]["image"]
@@ -308,11 +314,13 @@ def preprocess_data_coco(
 
             axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
 
-            axon_seg = (axon_seg / axon_seg.max() * 255).astype(np.uint8)
             # cv2.imwrite("TEST/images.png", axon_seg)
 
             axon_seg_regions = utils.find_regions(axon_seg)
             axon_myelin_annotations = []
+
+            print(f" - Len regions: {len(axon_seg_regions)}")
+            # for every region in axon regions
             for region in axon_seg_regions:
                 minr, minc, maxr, maxc = region.bbox
                 bbox_width = maxc - minc
@@ -336,7 +344,7 @@ def preprocess_data_coco(
 
             image_id += 1
 
-    data_split = split(image_mask_pairs, split_file="data_sem_split.json")
+    data_split = split(image_mask_pairs, split_file)
 
     save_split(
         [entry for entry in image_mask_pairs if entry[0] in data_split["train"]],
@@ -386,6 +394,6 @@ if __name__ == "__main__":
     #     print(f"{split_file} does not exist.")
 
     # clear_directories_yolo()
-    clear_directories_coco()
+    # clear_directories_coco()
     # preprocess_data_yolo()
-    preprocess_data_coco(TEM)
+    preprocess_data_coco(SEM)

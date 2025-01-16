@@ -1,13 +1,26 @@
 # Paths for COCO dataset
-COCO_TRAIN_ANNOTATION = "data-coco/annotations/json_annotation_train.json"
-COCO_TRAIN_IMAGES = "data-coco/images/train"
-COCO_VAL_ANNOTATION = "data-coco/annotations/json_annotation_val.json"
-COCO_VAL_IMAGES = "data-coco/images/val"
-COCO_TEST_ANNOTATION = "data-coco/annotations/json_annotation_test.json"
-COCO_TEST_IMAGES = "data-coco/images/test"
+COCO_TRAIN_SEM_ANNOTATION = "data-coco/sem/annotations/json_annotation_train.json"
+COCO_TRAIN_SEM_IMAGES = "data-coco/sem/images/train"
+COCO_VAL_SEM_ANNOTATION = "data-coco/sem/annotations/json_annotation_val.json"
+COCO_VAL_SEM_IMAGES = "data-coco/sem/images/val"
+COCO_TEST_SEM_ANNOTATION = "data-coco/sem/annotations/json_annotation_test.json"
+COCO_TEST_SEM_IMAGES = "data-coco/sem/images/test"
 
-SEM_DATA_SPLIT = 'data_sem_split.json'
+COCO_TRAIN_REG_NAME = "axon_detection_annotation_train"
+COCO_VAL_REG_NAME = "axon_detection_annotation_val"
+COCO_TEST_REG_NAME = "axon_detection_annotation_test"
 
+
+# Paths for COCO TEM dataset
+COCO_TRAIN_TEM_ANNOTATION = "data-coco/tem/annotations/json_annotation_train.json"
+COCO_TRAIN_TEM_IMAGES = "data-coco/tem/images/train"
+COCO_VAL_TEM_ANNOTATION = "data-coco/tem/annotations/json_annotation_val.json"
+COCO_VAL_TEM_IMAGES = "data-coco/tem/images/val"
+COCO_TEST_TEM_ANNOTATION = "data-coco/tem/annotations/json_annotation_test.json"
+COCO_TEST_TEM_IMAGES = "data-coco/tem/images/test"
+
+
+SEM_DATA_SPLIT = "data_sem_split.json"
 
 # Detectron2 configuration
 

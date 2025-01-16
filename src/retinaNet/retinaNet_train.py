@@ -3,13 +3,13 @@ import time
 import wandb
 import cv2
 import glob
+from constants.data_constants import SEM, TEM
 from retinaNet.trainer import Trainer
-
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.data.datasets import register_coco_instances
 from detectron2.utils.logger import setup_logger
-from detectron2.data.catalog import MetadataCatalog, DatasetCatalog
+from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import DefaultPredictor
 
 from preprocessing import preprocess_data_coco
@@ -19,20 +19,27 @@ from retinaNet.visualisations import visualize_true_labels
 
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
-    COCO_TRAIN_REG_NAME,
-    COCO_VAL_REG_NAME,
-    # COCO_VAL_TEM_ANNOTATION,
-    # COCO_VAL_TEM_IMAGES,
-    # COCO_TRAIN_TEM_ANNOTATION,
-    # COCO_TRAIN_TEM_IMAGES,
-    # COCO_TEST_TEM_ANNOTATION,
-    # COCO_TEST_TEM_IMAGES,
-    COCO_VAL_SEM_ANNOTATION,
-    COCO_VAL_SEM_IMAGES,
-    COCO_TRAIN_SEM_ANNOTATION,
-    COCO_TRAIN_SEM_IMAGES,
     COCO_TEST_SEM_ANNOTATION,
     COCO_TEST_SEM_IMAGES,
+    COCO_TRAIN_REG_NAME,
+    COCO_TRAIN_SEM_ANNOTATION,
+    COCO_TRAIN_SEM_IMAGES,
+    COCO_VAL_REG_NAME,
+    COCO_VAL_SEM_ANNOTATION,
+    COCO_VAL_SEM_IMAGES,
+    COCO_VAL_TEM_ANNOTATION,
+    COCO_VAL_TEM_IMAGES,
+    COCO_TRAIN_TEM_ANNOTATION,
+    COCO_TRAIN_TEM_IMAGES,
+    COCO_TEST_TEM_ANNOTATION,
+    COCO_TEST_TEM_IMAGES,
+    # COCO_VAL_SEM_ANNOTATION,
+    # COCO_VAL_SEM_IMAGES,
+    # COCO_TRAIN_SEM_ANNOTATION,
+    # COCO_TRAIN_SEM_IMAGES,
+    # COCO_TEST_SEM_ANNOTATION,
+    # COCO_TEST_SEM_IMAGES,
+    COCO_VAL_TEM_ANNOTATION,
     SEM_DATA_SPLIT,
     CONFIG_FILE,
     OUTPUT_DIR,
@@ -45,37 +52,38 @@ from retinaNet.constants.wanb_config_constants import (
 from retinaNet.constants.config_constants import CONF_THRESHOLD
 
 
-def register_instances(data_type: str = ""):
+def register_instances(data_type):
+
+    if data_type == SEM:
+        train_annotation = COCO_TRAIN_SEM_ANNOTATION
+        val_annotation = COCO_VAL_SEM_ANNOTATION
+        test_annotation = COCO_TEST_SEM_ANNOTATION
+        train_images = COCO_TRAIN_SEM_IMAGES
+        val_images = COCO_VAL_SEM_IMAGES
+        test_images = COCO_TEST_SEM_IMAGES
+    elif data_type == TEM:
+        train_annotation = COCO_TRAIN_TEM_ANNOTATION
+        val_annotation = COCO_VAL_TEM_ANNOTATION
+        test_annotation = COCO_TEST_TEM_ANNOTATION
+        train_images = COCO_TRAIN_TEM_IMAGES
+        val_images = COCO_VAL_TEM_IMAGES
+        test_images = COCO_TEST_TEM_IMAGES
 
     if (COCO_TRAIN_REG_NAME) not in list(MetadataCatalog):
         print("registered")
-        register_coco_instances(
-            COCO_TRAIN_REG_NAME, {}, COCO_TRAIN_SEM_ANNOTATION, COCO_TRAIN_SEM_IMAGES
-        )
+        register_coco_instances(COCO_TRAIN_REG_NAME, {}, train_annotation, train_images)
 
     if (COCO_VAL_REG_NAME) not in list(MetadataCatalog):
-        register_coco_instances(
-            COCO_VAL_REG_NAME, {}, COCO_VAL_SEM_ANNOTATION, COCO_VAL_SEM_IMAGES
-        )
+        register_coco_instances(COCO_VAL_REG_NAME, {}, val_annotation, val_images)
 
     if (COCO_TEST_REG_NAME) not in list(MetadataCatalog):
-        register_coco_instances(
-            COCO_TEST_REG_NAME, {}, COCO_TEST_SEM_ANNOTATION, COCO_TEST_SEM_IMAGES
-        )
+        register_coco_instances(COCO_TEST_REG_NAME, {}, test_annotation, test_images)
 
     print("List Meta")
     print(list(MetadataCatalog))
-    thing_classes = ["axon", "not-axon"]
     print("get ids!!!")
     # print(MetadataCatalog.get(COCO_VAL_REGISTRATION).dataset_id_to_contiguous_id)
     print(MetadataCatalog.get(COCO_VAL_REG_NAME).get("thing_classes"))
-
-    # FIXME: These lines don't work since thing_classes already has a value (axon and myelin) and thing_dataset_id_to_contiguous_id
-    # print("settings things id")
-    # dataset_id_contiguous_id = {1: 1}
-    # MetadataCatalog.get(COCO).set(
-    #     thing_dataset_id_to_contiguous_id=dataset_id_contiguous_id
-    # )
 
 
 def reset_instances():
@@ -89,9 +97,6 @@ def reset_instances():
             DatasetCatalog.remove(annotation)
 
     print(list(MetadataCatalog))
-    # print('\n meta data set:\n')
-    # print(MetadataCatalog.get(COCO_TRAIN_ANNOTATION))
-    # print(MetadataCatalog.get(COCO_VAL_ANNOTATION))
 
 
 def configure_detectron():
@@ -103,11 +108,11 @@ def configure_detectron():
 
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 200  # (2*140)/8 = 60 epochs
-    cfg.SOLVER.STEPS = [80, 120]  # no learning decay (lr remains stable)
+    cfg.SOLVER.MAX_ITER = 240  # (2*140)/8 = 60 epochs
+    cfg.SOLVER.STEPS = [40, 60]  # no learning decay (lr remains stable)
     # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
-    cfg.SOLVER.WARMUP_ITERS = 40
+    cfg.SOLVER.WARMUP_ITERS = 20
     cfg.SOLVER.CLIP_GRADIENTS.ENABLED = True
     cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE = "norm"
 
@@ -121,13 +126,12 @@ def configure_detectron():
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
     cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 5
     cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
-    cfg.MODEL.RETINANET.NUM_CLASSES = 1
 
-    # TODO: Find right anchor boxes through script
+    # TODO: Find right anchor boxes through kera script
     # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
 
-    # No shown improvement
-    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.412, 1.0, 2.43]]
+    # This makes boxes ++ faster, but no boxes shown
+    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
 
     print("\n -- model")
     print(cfg.MODEL)
@@ -139,12 +143,12 @@ def configure_detectron():
 
 
 def clear_data():
-    # split_file = SEM_DATA_SPLIT
-    # if os.path.exists(split_file):
-    #     os.remove(split_file)
-    #     print(f"{split_file} has been deleted.")
-    # else:
-    #     print(f"{split_file} does not exist.")
+    split_file = SEM_DATA_SPLIT
+    if os.path.exists(split_file):
+        os.remove(split_file)
+        print(f"{split_file} has been deleted.")
+    else:
+        print(f"{split_file} does not exist.")
 
     clear_directories_coco()
 
@@ -175,14 +179,11 @@ def visualize_predictions(cfg, test_dir, conf_threshold=CONF_THRESHOLD):
 
         print("boxes")
         print(len(boxes))
-        print(boxes)
 
         for i, box in enumerate(boxes):
             if scores[i] > conf_threshold:
-                x1, y1, width, height = map(int, box)
-                x2 = x1 + width
-                y2 = y1 + height
-                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                x1, y1, x2, y2 = map(int, box)
+                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
 
         output_path = os.path.join(output_directory, os.path.basename(image_path))
         success = cv2.imwrite(output_path, img)
@@ -200,15 +201,15 @@ if __name__ == "__main__":
 
     # # TODO: Run this only once when the registered metadata isnt the same as local
     # clear_data()
-    # preprocess_data_coco("data_axondeepseg_sem")
-    visualize_true_labels(COCO_VAL_SEM_ANNOTATION, data_type="sem", set_type="val")
-    # visualize_true_labels(COCO_TEST_IMAGES, set_type="test")
+    # preprocess_data_coco(SEM)
+    visualize_true_labels(COCO_TEST_SEM_ANNOTATION, data_type=SEM, set_type="test")
 
     # TRAIN STEPS:
 
     setup_logger()
     reset_instances()
-    register_instances()
+
+    register_instances(SEM)
     cfg = configure_detectron()
 
     api = wandb.Api()
@@ -251,28 +252,25 @@ if __name__ == "__main__":
     # cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth"
 
     model_trainer = Trainer(cfg)
+
+    # TODO: Add when training
     model_trainer.resume_or_load(resume=False)
 
     try:
-        print("\n-- TRAIN")
         model_trainer.train()
     except Exception as e:
         print("Training stopped due to:" + str(e))
 
     try:
-        print("\n-- VAL")
         final_val_metrics = model_trainer.evaluate()
         run.log(final_val_metrics)
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
 
-    # try:
-    #     final_test_metrics = model_trainer.test()
-    #     run.log(final_test_metrics)
-    # except Exception as e:
-    #     print("Validation run stopped due to:" + str(e))
-
-    # cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth"
+    try:
+        final_test_metrics = model_trainer.test()
+        run.log(final_test_metrics)
+    except Exception as e:
+        print("Validation run stopped due to:" + str(e))
 
     visualize_predictions(cfg, COCO_TEST_SEM_IMAGES)
-    visualize_true_labels(COCO_TEST_SEM_ANNOTATION, set_type="test")

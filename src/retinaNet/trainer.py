@@ -10,13 +10,19 @@ from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 from detectron2.engine import DefaultPredictor
 
+
 # from detectron2.evaluation.coco_evaluation import _evaluate_box_proposals
 
 from detectron2.data.catalog import MetadataCatalog
+
+# from detectron2.projects.DensePose.densepose.densepose_coco_evaluation import (
+#     DensePoseCocoEval,
+# )
+
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
-    # COCO_VAL_TEM_IMAGES,
-    COCO_VAL_SEM_IMAGES,
+    COCO_VAL_TEM_IMAGES,
+    # COCO_VAL_SEM_IMAGES,
     COCO_VAL_REG_NAME,
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
@@ -47,7 +53,15 @@ class Trainer(DefaultTrainer):
         training_time = time.time() - self.start_time
         wandb.log({"training_time": training_time})
 
-        # PREDICTION part for visualization of result
+        # PREDICTION part for VAL PRECISION / RECALL
+
+        # try:
+        #     final_val_metrics = self.evaluate()
+        #     print(f"\nVAL METRICS ARE: {final_val_metrics}")
+        # except Exception as e:
+        #     print("Validation run stopped due to:" + str(e))
+
+        # PREDICTION part for VAL visualization of result
 
         # self.evaluate()
 
@@ -58,7 +72,7 @@ class Trainer(DefaultTrainer):
 
         self.predictor.model.load_state_dict(self.model.state_dict())
 
-        image_paths = glob.glob(os.path.join(COCO_VAL_SEM_IMAGES, "*.png"))
+        image_paths = glob.glob(os.path.join(COCO_VAL_TEM_IMAGES, "*.png"))
 
         for image_path in image_paths:
             print("image path")
@@ -73,9 +87,6 @@ class Trainer(DefaultTrainer):
 
             print(f"\n Boxes")
             print(len(boxes))
-
-            print("scores len")
-            print(len(scores))
 
             for i, box in enumerate(boxes):
                 if scores[i] > CONF_THRESHOLD:
@@ -106,10 +117,15 @@ class Trainer(DefaultTrainer):
         # print('thing classes')
         # print(thing_classes)
         evaluator = COCOEvaluator(
-            COCO_VAL_REG_NAME, output_dir="./output/", max_dets_per_image=2000
+            COCO_VAL_REG_NAME, output_dir="./output/", max_dets_per_image=1000
         )
         val_loader = build_detection_test_loader(self.cfg, COCO_VAL_REG_NAME)
         results = inference_on_dataset(self.model, val_loader, evaluator)
+
+        # coco_eval = DensePoseCocoEval(coco_gt, coco_dt, "densepose", dpEvalMode=DensePoseEvalMode.GPSM)
+        # coco_eval.evaluate()
+        # coco_eval.accumulate()
+        # coco_eval.summarize()
 
         self.log_metrics(results, "val")
         wandb.log(results)
@@ -117,7 +133,7 @@ class Trainer(DefaultTrainer):
 
     def test(self):
         test_evaluator = COCOEvaluator(
-            COCO_TEST_REG_NAME, output_dir="./output/", max_dets_per_image=2000
+            COCO_TEST_REG_NAME, output_dir="./output/", max_dets_per_image=1000
         )
         test_loader = build_detection_test_loader(self.cfg, COCO_TEST_REG_NAME)
 
@@ -127,6 +143,9 @@ class Trainer(DefaultTrainer):
             test_evaluator,
         )
         self.log_metrics(test_results, "test")
+
+        print("\ntest results")
+        print(test_results)
 
         wandb.log(test_results)
         return test_results
