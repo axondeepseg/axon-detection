@@ -273,4 +273,4 @@ if __name__ == "__main__":
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
 
-    model_trainer.visualize_predictions(cfg, COCO_TEST_SEM_IMAGES)
+    model_trainer.visualize_predictions(COCO_TEST_SEM_IMAGES)
