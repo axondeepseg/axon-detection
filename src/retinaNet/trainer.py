@@ -5,6 +5,7 @@ import cv2
 import wandb as wandb
 import matplotlib.pyplot as plt
 import torch
+import numpy as np
 from detectron2.engine import DefaultTrainer, hooks
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
@@ -138,12 +139,13 @@ class Trainer(DefaultTrainer):
         wandb.log(results)
         return results
 
-    def visualize_predictions(self, test_dir, conf_threshold=CONF_THRESHOLD):
+    def visualize_predictions(cfg, test_dir, conf_threshold=CONF_THRESHOLD):
         output_directory = "output_predictions"
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        self.predictor.model.load_state_dict(self.model.state_dict())
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_threshold
+        predictor = DefaultPredictor(cfg)
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
 
         for image_path in image_paths:
@@ -151,7 +153,7 @@ class Trainer(DefaultTrainer):
             print("Predicting on image:", image_path)
 
             start_time = time.time()
-            outputs = self.predictor(img)
+            outputs = predictor(img)
             inference_time = time.time() - start_time
 
             wandb.log({"Inference Time (s)": inference_time})
@@ -164,10 +166,22 @@ class Trainer(DefaultTrainer):
             print("boxes")
             print(len(boxes))
 
+            # Normalize scores to [0, 1] for color mapping
+            min_score = np.min(scores)
+            max_score = np.max(scores)
+            normalized_scores = (scores - min_score) / (max_score - min_score)
+
             for i, box in enumerate(boxes):
                 if scores[i] > conf_threshold:
                     x1, y1, x2, y2 = map(int, box)
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
+
+                    # Compute color based on normalized score
+                    color = plt.cm.Blues(normalized_scores[i])[:3]  # RGB tuple
+                    color = tuple(
+                        int(c * 255) for c in color[::-1]
+                    )  # Convert to BGR and scale to 0-255
+
+                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
 
             output_path = os.path.join(output_directory, os.path.basename(image_path))
             success = cv2.imwrite(output_path, img)
