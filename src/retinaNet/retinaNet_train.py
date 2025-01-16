@@ -219,7 +219,7 @@ if __name__ == "__main__":
         project=WANDB_PROJECT,
         name=WANDB_RUN_NAME,
         dir="/output",
-        mode="offline",
+        # mode="offline",
     )
 
     run.config.update(
