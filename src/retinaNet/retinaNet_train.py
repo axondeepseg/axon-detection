@@ -153,48 +153,48 @@ def clear_data():
     clear_directories_coco()
 
 
-def visualize_predictions(cfg, test_dir, conf_threshold=CONF_THRESHOLD):
-    output_directory = "output_predictions"
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
+# def visualize_predictions(cfg, test_dir, conf_threshold=CONF_THRESHOLD):
+#     output_directory = "output_predictions"
+#     if not os.path.exists(output_directory):
+#         os.makedirs(output_directory)
 
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_threshold
-    predictor = DefaultPredictor(cfg)
-    image_paths = glob.glob(os.path.join(test_dir, "*.png"))
+#     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_threshold
+#     predictor = DefaultPredictor(cfg)
+#     image_paths = glob.glob(os.path.join(test_dir, "*.png"))
 
-    for image_path in image_paths:
-        img = cv2.imread(image_path)
-        print("Predicting on image:", image_path)
+#     for image_path in image_paths:
+#         img = cv2.imread(image_path)
+#         print("Predicting on image:", image_path)
 
-        start_time = time.time()
-        outputs = predictor(img)
-        inference_time = time.time() - start_time
+#         start_time = time.time()
+#         outputs = predictor(img)
+#         inference_time = time.time() - start_time
 
-        wandb.log({"Inference Time (s)": inference_time})
-        print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
+#         wandb.log({"Inference Time (s)": inference_time})
+#         print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
 
-        instances = outputs["instances"].to("cpu")
-        boxes = instances.pred_boxes.tensor.numpy()
-        scores = instances.scores.numpy()
+#         instances = outputs["instances"].to("cpu")
+#         boxes = instances.pred_boxes.tensor.numpy()
+#         scores = instances.scores.numpy()
 
-        print("boxes")
-        print(len(boxes))
+#         print("boxes")
+#         print(len(boxes))
 
-        for i, box in enumerate(boxes):
-            if scores[i] > conf_threshold:
-                x1, y1, x2, y2 = map(int, box)
-                cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
+#         for i, box in enumerate(boxes):
+#             if scores[i] > conf_threshold:
+#                 x1, y1, x2, y2 = map(int, box)
+#                 cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
 
-        output_path = os.path.join(output_directory, os.path.basename(image_path))
-        success = cv2.imwrite(output_path, img)
-        if success:
-            print(f"Saved prediction image to {output_path}")
-        else:
-            print(f"Failed to save prediction image to {output_path}")
+#         output_path = os.path.join(output_directory, os.path.basename(image_path))
+#         success = cv2.imwrite(output_path, img)
+#         if success:
+#             print(f"Saved prediction image to {output_path}")
+#         else:
+#             print(f"Failed to save prediction image to {output_path}")
 
-        wandb.log(
-            {"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]}
-        )
+#         wandb.log(
+#             {"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]}
+#         )
 
 
 if __name__ == "__main__":
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         project=WANDB_PROJECT,
         name=WANDB_RUN_NAME,
         dir="/output",
-        # mode="offline",
+        mode="offline",
     )
 
     run.config.update(
@@ -273,4 +273,4 @@ if __name__ == "__main__":
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
 
-    visualize_predictions(cfg, COCO_TEST_SEM_IMAGES)
+    model_trainer.visualize_predictions(cfg, COCO_TEST_SEM_IMAGES)

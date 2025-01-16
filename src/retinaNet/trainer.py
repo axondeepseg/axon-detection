@@ -21,8 +21,8 @@ from detectron2.data.catalog import MetadataCatalog
 
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
-    COCO_VAL_TEM_IMAGES,
-    # COCO_VAL_SEM_IMAGES,
+    # COCO_VAL_TEM_IMAGES,
+    COCO_VAL_SEM_IMAGES,
     COCO_VAL_REG_NAME,
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
@@ -72,7 +72,7 @@ class Trainer(DefaultTrainer):
 
         self.predictor.model.load_state_dict(self.model.state_dict())
 
-        image_paths = glob.glob(os.path.join(COCO_VAL_TEM_IMAGES, "*.png"))
+        image_paths = glob.glob(os.path.join(COCO_VAL_SEM_IMAGES, "*.png"))
 
         for image_path in image_paths:
             print("image path")
@@ -97,6 +97,13 @@ class Trainer(DefaultTrainer):
                 "output_predictions", "modified_params_" + os.path.basename(image_path)
             )
             cv2.imwrite(output_path, img)
+            wandb.log(
+                {
+                    "Val Prediction": [
+                        wandb.Image(img, caption=os.path.basename(image_path))
+                    ]
+                }
+            )
             break
 
     def log_metrics(self, results, split_name="test"):
@@ -130,6 +137,48 @@ class Trainer(DefaultTrainer):
         self.log_metrics(results, "val")
         wandb.log(results)
         return results
+
+    def visualize_predictions(self, test_dir, conf_threshold=CONF_THRESHOLD):
+        output_directory = "output_predictions"
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        self.predictor.model.load_state_dict(self.model.state_dict())
+        image_paths = glob.glob(os.path.join(test_dir, "*.png"))
+
+        for image_path in image_paths:
+            img = cv2.imread(image_path)
+            print("Predicting on image:", image_path)
+
+            start_time = time.time()
+            outputs = self.predictor(img)
+            inference_time = time.time() - start_time
+
+            wandb.log({"Inference Time (s)": inference_time})
+            print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
+
+            instances = outputs["instances"].to("cpu")
+            boxes = instances.pred_boxes.tensor.numpy()
+            scores = instances.scores.numpy()
+
+            print("boxes")
+            print(len(boxes))
+
+            for i, box in enumerate(boxes):
+                if scores[i] > conf_threshold:
+                    x1, y1, x2, y2 = map(int, box)
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 3)
+
+            output_path = os.path.join(output_directory, os.path.basename(image_path))
+            success = cv2.imwrite(output_path, img)
+            if success:
+                print(f"Saved prediction image to {output_path}")
+            else:
+                print(f"Failed to save prediction image to {output_path}")
+
+            wandb.log(
+                {"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]}
+            )
 
     def test(self):
         test_evaluator = COCOEvaluator(
