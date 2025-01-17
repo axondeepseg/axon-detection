@@ -108,7 +108,7 @@ def configure_detectron():
 
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 100  # (2*140)/8 = 60 epochs
+    cfg.SOLVER.MAX_ITER = 250  # (2*140)/8 = 60 epochs
     # cfg.SOLVER.STEPS = [40, 80]  # no learning decay (lr remains stable)
     # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
