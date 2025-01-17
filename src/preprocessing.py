@@ -396,4 +396,4 @@ if __name__ == "__main__":
     # clear_directories_yolo()
     # clear_directories_coco()
     # preprocess_data_yolo()
-    preprocess_data_coco(SEM)
+    preprocess_data_coco(TEM)
