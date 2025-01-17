@@ -300,6 +300,8 @@ def preprocess_data_coco(
             print(img_path)
 
             img = utils.load_bids_image(img_path)
+            print("img after")
+            print(img)
 
             img_height, img_width = img.shape[:2]
             image_info = {
