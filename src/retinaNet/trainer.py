@@ -169,16 +169,13 @@ class Trainer(DefaultTrainer):
 
             print("Predicting on image:", image_path)
 
-            # Perform inference and measure time
             start_time = time.time()
             outputs = self.predictor(img)
             inference_time = time.time() - start_time
 
-            # Log inference time
             wandb.log({"Inference Time (s)": inference_time})
             print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
 
-            # Retrieve and process predictions
             instances = outputs.get("instances")
             if instances is None:
                 print(f"No predictions found for image: {image_path}")
@@ -194,20 +191,16 @@ class Trainer(DefaultTrainer):
 
             print(f"Number of boxes detected: {len(boxes)}")
 
-            # Draw bounding boxes and labels on the image
             for i, box in enumerate(boxes):
                 if scores[i] > conf_threshold:
                     x1, y1, x2, y2 = map(int, box)
 
-                    # Create a gradient color from green to blue based on the confidence score
                     green = int(255 * (1 - scores[i]))
                     blue = int(255 * scores[i])
                     color = (0, green, blue)
 
-                    # Draw the bounding box
                     cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
 
-                    # Add the confidence score label
                     label = f"{scores[i]:.2f}"
                     font_scale = 0.5
                     font_thickness = 1
@@ -215,12 +208,9 @@ class Trainer(DefaultTrainer):
                         label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
                     )[0]
                     text_x = x1
-                    text_y = y1 - 5  # Position above the box
-                    text_y = max(
-                        text_y, 10
-                    )  # Ensure the text is not too close to the top
+                    text_y = y1 - 5
+                    text_y = max(text_y, 10)
 
-                    # Draw a filled rectangle for the text background
                     cv2.rectangle(
                         img,
                         (text_x, text_y - text_size[1]),
@@ -228,18 +218,16 @@ class Trainer(DefaultTrainer):
                         color,
                         -1,
                     )
-                    # Put the text on the image
                     cv2.putText(
                         img,
                         label,
                         (text_x, text_y - 2),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         font_scale,
-                        (255, 255, 255),  # White text
+                        (255, 255, 255),
                         font_thickness,
                     )
 
-            # Save the prediction image
             output_path = os.path.join(output_directory, os.path.basename(image_path))
             success = cv2.imwrite(output_path, img)
             if success:
@@ -247,9 +235,12 @@ class Trainer(DefaultTrainer):
             else:
                 print(f"Failed to save prediction image to {output_path}")
 
-            # Log the prediction image to WandB
             wandb.log(
-                {"Prediction": [wandb.Image(img, caption=os.path.basename(image_path))]}
+                {
+                    "Test Prediction": [
+                        wandb.Image(img, caption=os.path.basename(image_path))
+                    ]
+                }
             )
 
     def test(self):
