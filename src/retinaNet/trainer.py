@@ -228,6 +228,38 @@ class Trainer(DefaultTrainer):
                         font_thickness,
                     )
 
+            legend_start_y = 20
+            legend_start_x = 10
+            legend_spacing = 25
+
+            cv2.putText(
+                img,
+                "Legend:",
+                (legend_start_x, legend_start_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255, 255, 255),
+                2,
+            )
+            cv2.putText(
+                img,
+                "High Confidence (Blue)",
+                (legend_start_x, legend_start_y + legend_spacing),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 0, 0),
+                1,
+            )
+            cv2.putText(
+                img,
+                "Low Confidence (Green)",
+                (legend_start_x, legend_start_y + 2 * legend_spacing),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                1,
+            )
+
             output_path = os.path.join(output_directory, os.path.basename(image_path))
             success = cv2.imwrite(output_path, img)
             if success:
