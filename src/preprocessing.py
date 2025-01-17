@@ -291,16 +291,14 @@ def preprocess_data_coco(
             axon_seg_path = data_dict[subject][sample]["axon"]
             image_name = f"{subject}_{sample}.png"
 
-            axon_test_path = cv2.imread(img_path)
-            cv2.imwrite("TEST/images.png", axon_test_path)
+            # axon_test_path = cv2.imread(img_path)
+            # cv2.imwrite("TEST/images.png", axon_test_path)
 
             # FIXME: Remove normalize method since we removed these lines for TEM
             # img = utils.load_bids_image(img_path, pixel_size)
             # img = utils.normalize_and_window(img)
 
             img = utils.load_bids_image(img_path)
-
-            cv2.imwrite("TEST2/images.png", img)
 
             img_height, img_width = img.shape[:2]
             image_info = {
@@ -313,8 +311,6 @@ def preprocess_data_coco(
             # Load segmentation masks and find regions
 
             axon_seg = cv2.imread(axon_seg_path, cv2.IMREAD_GRAYSCALE)
-
-            # cv2.imwrite("TEST/images.png", axon_seg)
 
             axon_seg_regions = utils.find_regions(axon_seg)
             axon_myelin_annotations = []
