@@ -128,10 +128,10 @@ def configure_detectron():
     cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
 
     # TODO: Find right anchor boxes through kera script
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
+    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
 
     # This makes boxes ++ faster, but no boxes shown
-    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
+    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
 
     print("\n -- model")
     print(cfg.MODEL)
