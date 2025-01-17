@@ -297,6 +297,7 @@ def preprocess_data_coco(
             # FIXME: Remove normalize method since we removed these lines for TEM
             # img = utils.load_bids_image(img_path, pixel_size)
             # img = utils.normalize_and_window(img)
+            print(img_path)
 
             img = utils.load_bids_image(img_path)
 
