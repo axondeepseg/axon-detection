@@ -22,8 +22,8 @@ from detectron2.data.catalog import MetadataCatalog
 
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
-    # COCO_VAL_TEM_IMAGES,
-    COCO_VAL_SEM_IMAGES,
+    COCO_VAL_TEM_IMAGES,
+    # COCO_VAL_SEM_IMAGES,
     COCO_VAL_REG_NAME,
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
@@ -73,7 +73,7 @@ class Trainer(DefaultTrainer):
 
         self.predictor.model.load_state_dict(self.model.state_dict())
 
-        image_paths = glob.glob(os.path.join(COCO_VAL_SEM_IMAGES, "*.png"))
+        image_paths = glob.glob(os.path.join(COCO_VAL_TEM_IMAGES, "*.png"))
 
         for image_path in image_paths:
             print("image path")
@@ -237,7 +237,7 @@ class Trainer(DefaultTrainer):
 
             wandb.log(
                 {
-                    "Test Prediction": [
+                    f"Test Prediction for {image_path}": [
                         wandb.Image(img, caption=os.path.basename(image_path))
                     ]
                 }

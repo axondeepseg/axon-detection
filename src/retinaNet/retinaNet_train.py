@@ -131,7 +131,7 @@ def configure_detectron():
     # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
 
     # This makes boxes ++ faster, but no boxes shown
-    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
+    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
 
     print("\n -- model")
     print(cfg.MODEL)
@@ -202,14 +202,14 @@ if __name__ == "__main__":
     # # TODO: Run this only once when the registered metadata isnt the same as local
     # clear_data()
     # preprocess_data_coco(SEM)
-    visualize_true_labels(COCO_TEST_SEM_ANNOTATION, data_type=SEM, set_type="test")
+    visualize_true_labels(COCO_TEST_TEM_ANNOTATION, data_type=TEM, set_type="test")
 
     # TRAIN STEPS:
 
     setup_logger()
     reset_instances()
 
-    register_instances(SEM)
+    register_instances(TEM)
     cfg = configure_detectron()
 
     api = wandb.Api()
@@ -273,4 +273,4 @@ if __name__ == "__main__":
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
 
-    model_trainer.visualize_predictions(COCO_TEST_SEM_IMAGES)
+    model_trainer.visualize_predictions(COCO_TEST_TEM_IMAGES)
