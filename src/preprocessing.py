@@ -393,6 +393,6 @@ if __name__ == "__main__":
     #     print(f"{split_file} does not exist.")
 
     # clear_directories_yolo()
-    # clear_directories_coco()
+    clear_directories_coco()
     # preprocess_data_yolo()
     preprocess_data_coco(TEM)

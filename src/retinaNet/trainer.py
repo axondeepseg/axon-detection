@@ -10,6 +10,12 @@ from detectron2.engine import DefaultTrainer, hooks
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 from detectron2.engine import DefaultPredictor
+from pycocotools.cocoeval import COCOeval
+
+try:
+    from detectron2.evaluation.fast_eval_api import COCOeval_opt
+except ImportError:
+    COCOeval_opt = COCOeval
 
 
 # from detectron2.evaluation.coco_evaluation import _evaluate_box_proposals
@@ -56,11 +62,11 @@ class Trainer(DefaultTrainer):
 
         # PREDICTION part for VAL PRECISION / RECALL
 
-        # try:
-        #     final_val_metrics = self.evaluate()
-        #     print(f"\nVAL METRICS ARE: {final_val_metrics}")
-        # except Exception as e:
-        #     print("Validation run stopped due to:" + str(e))
+        try:
+            final_val_metrics = self.evaluate()
+            print(f"\nVAL METRICS ARE: {final_val_metrics}")
+        except Exception as e:
+            print("Validation run stopped due to:" + str(e))
 
         # PREDICTION part for VAL visualization of result
 
@@ -129,6 +135,20 @@ class Trainer(DefaultTrainer):
         )
         val_loader = build_detection_test_loader(self.cfg, COCO_VAL_REG_NAME)
         results = inference_on_dataset(self.model, val_loader, evaluator)
+
+        print("Results Val")
+        print(results)
+
+        # print("Evaluator")
+        # print(evaluator)
+
+        # box_results = evaluator._results
+        # print("Box proposals")
+        # print(box_results)
+
+        coco_eval_results = COCOeval_opt.accumulate(COCOeval_opt)
+        print("coco_eval_results")
+        print(coco_eval_results)
 
         # coco_eval = DensePoseCocoEval(coco_gt, coco_dt, "densepose", dpEvalMode=DensePoseEvalMode.GPSM)
         # coco_eval.evaluate()

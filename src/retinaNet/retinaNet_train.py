@@ -108,7 +108,7 @@ def configure_detectron():
 
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 250  # (2*140)/8 = 60 epochs
+    cfg.SOLVER.MAX_ITER = 300  # (2*140)/8 = 60 epochs
     # cfg.SOLVER.STEPS = [40, 80]  # no learning decay (lr remains stable)
     # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         project=WANDB_PROJECT,
         name=WANDB_RUN_NAME,
         dir="/output",
-        # mode="offline",
+        mode="offline",
     )
 
     run.config.update(
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     model_trainer = Trainer(cfg)
 
     # TODO: Add when training
-    model_trainer.resume_or_load(resume=False)
+    # model_trainer.resume_or_load(resume=False)
 
     try:
         model_trainer.train()
@@ -273,4 +273,4 @@ if __name__ == "__main__":
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
 
-    model_trainer.visualize_predictions(COCO_TEST_TEM_IMAGES)
+    # model_trainer.visualize_predictions(COCO_TEST_TEM_IMAGES)
