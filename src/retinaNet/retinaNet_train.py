@@ -1,8 +1,6 @@
 import os
-import time
 import wandb
-import cv2
-import glob
+import torch
 from constants.data_constants import SEM, TEM
 from retinaNet.trainer import Trainer
 from detectron2 import model_zoo
@@ -217,5 +215,8 @@ if __name__ == "__main__":
         run.log(final_test_metrics)
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
+
+    model_path = "retinaNet/output/model_final.pth"
+    torch.save(model_trainer.model.state_dict(), model_path)
 
     model_trainer.visualize_predictions(COCO_TEST_TEM_IMAGES)

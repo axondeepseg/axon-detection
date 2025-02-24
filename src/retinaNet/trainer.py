@@ -198,6 +198,12 @@ class Trainer(DefaultTrainer):
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
 
         for image_path in image_paths:
+            if image_path != "data-coco/tem/images/test/sub-nyuMouse07_sample-0004.png":
+                break
+
+            print("image path")
+            print(image_path)
+
             img = cv2.imread(image_path)
             if img is None:
                 print(f"Failed to load image: {image_path}")
@@ -278,7 +284,6 @@ class Trainer(DefaultTrainer):
                     ]
                 }
             )
-            break
 
     def test(self):
         test_evaluator = COCOEvaluator(
