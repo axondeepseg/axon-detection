@@ -235,11 +235,12 @@ class Trainer(DefaultTrainer):
                     if scores[i] > conf_threshold:
                         x1, y1, x2, y2 = map(int, box)
 
+                        # TODO: Revise color gradient
                         green = int(255 * (1 - scores[i]))
                         blue = int(255 * scores[i])
                         color = (0, blue, green)
 
-                        cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness=7)
+                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), thickness=7)
 
                         label = f"{scores[i]:.2f}"
                         font_scale = 0.5
