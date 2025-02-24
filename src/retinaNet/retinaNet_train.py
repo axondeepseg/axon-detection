@@ -116,7 +116,7 @@ def configure_detectron():
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
-    cfg.MODEL.DEVICE = "cpu"
+    # cfg.MODEL.DEVICE = "cpu"
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
     cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 5
     cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
