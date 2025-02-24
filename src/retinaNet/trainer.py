@@ -198,92 +198,92 @@ class Trainer(DefaultTrainer):
         image_paths = glob.glob(os.path.join(test_dir, "*.png"))
 
         for image_path in image_paths:
-            if image_path != "data-coco/tem/images/test/sub-nyuMouse07_sample-0004.png":
-                break
+            if image_path == "data-coco/tem/images/test/sub-nyuMouse07_sample-0004.png":
+                print("image path")
+                print(image_path)
 
-            print("image path")
-            print(image_path)
+                img = cv2.imread(image_path)
+                if img is None:
+                    print(f"Failed to load image: {image_path}")
+                    continue
 
-            img = cv2.imread(image_path)
-            if img is None:
-                print(f"Failed to load image: {image_path}")
-                continue
+                print("Predicting on image:", image_path)
 
-            print("Predicting on image:", image_path)
+                start_time = time.time()
+                outputs = self.predictor(img)
+                inference_time = time.time() - start_time
 
-            start_time = time.time()
-            outputs = self.predictor(img)
-            inference_time = time.time() - start_time
+                wandb.log({"Inference Time (s)": inference_time})
+                print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
 
-            wandb.log({"Inference Time (s)": inference_time})
-            print(f"Inference time for {image_path}: {inference_time:.4f} seconds")
+                instances = outputs.get("instances")
+                if instances is None:
+                    print(f"No predictions found for image: {image_path}")
+                    continue
 
-            instances = outputs.get("instances")
-            if instances is None:
-                print(f"No predictions found for image: {image_path}")
-                continue
+                instances = instances.to("cpu")
+                boxes = (
+                    instances.pred_boxes.tensor.numpy()
+                    if instances.has("pred_boxes")
+                    else []
+                )
+                scores = instances.scores.numpy() if instances.has("scores") else []
 
-            instances = instances.to("cpu")
-            boxes = (
-                instances.pred_boxes.tensor.numpy()
-                if instances.has("pred_boxes")
-                else []
-            )
-            scores = instances.scores.numpy() if instances.has("scores") else []
+                print(f"Number of boxes detected: {len(boxes)}")
 
-            print(f"Number of boxes detected: {len(boxes)}")
+                for i, box in enumerate(boxes):
+                    if scores[i] > conf_threshold:
+                        x1, y1, x2, y2 = map(int, box)
 
-            for i, box in enumerate(boxes):
-                if scores[i] > conf_threshold:
-                    x1, y1, x2, y2 = map(int, box)
+                        green = int(255 * (1 - scores[i]))
+                        blue = int(255 * scores[i])
+                        color = (0, green, blue)
 
-                    green = int(255 * (1 - scores[i]))
-                    blue = int(255 * scores[i])
-                    color = (0, green, blue)
+                        cv2.rectangle(img, (x1, y1), (x2, y2), color, 4)
 
-                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 4)
+                        label = f"{scores[i]:.2f}"
+                        font_scale = 0.5
+                        font_thickness = 1
+                        text_size = cv2.getTextSize(
+                            label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
+                        )[0]
+                        text_x = x1
+                        text_y = y1 - 5
+                        text_y = max(text_y, 10)
 
-                    label = f"{scores[i]:.2f}"
-                    font_scale = 0.5
-                    font_thickness = 1
-                    text_size = cv2.getTextSize(
-                        label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
-                    )[0]
-                    text_x = x1
-                    text_y = y1 - 5
-                    text_y = max(text_y, 10)
+                        cv2.rectangle(
+                            img,
+                            (text_x, text_y - text_size[1]),
+                            (text_x + text_size[0], text_y),
+                            color,
+                            -1,
+                        )
+                        cv2.putText(
+                            img,
+                            label,
+                            (text_x, text_y - 2),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            font_scale,
+                            (255, 255, 255),
+                            font_thickness,
+                        )
 
-                    cv2.rectangle(
-                        img,
-                        (text_x, text_y - text_size[1]),
-                        (text_x + text_size[0], text_y),
-                        color,
-                        -1,
-                    )
-                    cv2.putText(
-                        img,
-                        label,
-                        (text_x, text_y - 2),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        font_scale,
-                        (255, 255, 255),
-                        font_thickness,
-                    )
+                output_path = os.path.join(
+                    output_directory, os.path.basename(image_path)
+                )
+                success = cv2.imwrite(output_path, img)
+                if success:
+                    print(f"Saved prediction image to {output_path}")
+                else:
+                    print(f"Failed to save prediction image to {output_path}")
 
-            output_path = os.path.join(output_directory, os.path.basename(image_path))
-            success = cv2.imwrite(output_path, img)
-            if success:
-                print(f"Saved prediction image to {output_path}")
-            else:
-                print(f"Failed to save prediction image to {output_path}")
-
-            wandb.log(
-                {
-                    f"Test Prediction for {image_path}": [
-                        wandb.Image(img, caption=os.path.basename(image_path))
-                    ]
-                }
-            )
+                wandb.log(
+                    {
+                        f"Test Prediction for {image_path}": [
+                            wandb.Image(img, caption=os.path.basename(image_path))
+                        ]
+                    }
+                )
 
     def test(self):
         test_evaluator = COCOEvaluator(
