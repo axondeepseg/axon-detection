@@ -198,25 +198,25 @@ if __name__ == "__main__":
     )
 
     # TODO: remove when training
-    cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth"
+    # cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth"
 
     model_trainer = Trainer(cfg)
 
     # TODO: Add when training
-    # model_trainer.resume_or_load(resume=False)
+    model_trainer.resume_or_load(resume=False)
 
-    # try:
-    #     model_trainer.train()
-    # except Exception as e:
-    #     print("Training stopped due to:" + str(e))
+    try:
+        model_trainer.train()
+    except Exception as e:
+        print("Training stopped due to:" + str(e))
 
-    # try:
-    #     final_test_metrics = model_trainer.test()
-    #     run.log(final_test_metrics)
-    # except Exception as e:
-    #     print("Validation run stopped due to:" + str(e))
+    try:
+        final_test_metrics = model_trainer.test()
+        run.log(final_test_metrics)
+    except Exception as e:
+        print("Validation run stopped due to:" + str(e))
 
-    # model_path = "retinaNet/output/model_final.pth"
-    # torch.save(model_trainer.model.state_dict(), model_path)
+    model_path = "retinaNet/output/model_final.pth"
+    torch.save(model_trainer.model.state_dict(), model_path)
 
     model_trainer.visualize_predictions(COCO_TEST_TEM_IMAGES)
