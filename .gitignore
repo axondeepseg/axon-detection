@@ -11,6 +11,7 @@ src/retinaNet/wandb/*
 src/retinaNet/output
 src/retinaNet/constants/__pycache__
 src/retinaNet/__pycache__
+src/retinaNet/.DS_Store
 
 src/__pycache__
 src/constants/__pycache__

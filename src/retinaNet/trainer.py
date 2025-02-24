@@ -77,41 +77,41 @@ class Trainer(DefaultTrainer):
             f"\nLR at iteration={current_iteration} & epoch={current_iteration / 8}: {current_lr}"
         )
 
-        self.predictor.model.load_state_dict(self.model.state_dict())
+        # self.predictor.model.load_state_dict(self.model.state_dict())
 
-        image_paths = glob.glob(os.path.join(COCO_VAL_TEM_IMAGES, "*.png"))
+        # image_paths = glob.glob(os.path.join(COCO_VAL_TEM_IMAGES, "*.png"))
 
-        for image_path in image_paths:
-            print("image path")
-            print(image_path)
-            img = cv2.imread(image_path)
-            outputs = self.predictor(img)
-            instances = outputs["instances"].to("cpu")
+        # for image_path in image_paths:
+        #     print("image path")
+        #     print(image_path)
+        #     img = cv2.imread(image_path)
+        #     outputs = self.predictor(img)
+        #     instances = outputs["instances"].to("cpu")
 
-            # confidence scores
-            scores = instances.scores.numpy()
-            boxes = instances.pred_boxes.tensor.numpy()
+        #     # confidence scores
+        #     scores = instances.scores.numpy()
+        #     boxes = instances.pred_boxes.tensor.numpy()
 
-            print(f"\n Boxes")
-            print(len(boxes))
+        #     print(f"\n Boxes")
+        #     print(len(boxes))
 
-            for i, box in enumerate(boxes):
-                if scores[i] > CONF_THRESHOLD:
-                    x1, y1, x2, y2 = map(int, box)
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        #     for i, box in enumerate(boxes):
+        #         if scores[i] > CONF_THRESHOLD:
+        #             x1, y1, x2, y2 = map(int, box)
+        #             cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
-            output_path = os.path.join(
-                "output_predictions", "modified_params_" + os.path.basename(image_path)
-            )
-            cv2.imwrite(output_path, img)
-            wandb.log(
-                {
-                    "Val Prediction": [
-                        wandb.Image(img, caption=os.path.basename(image_path))
-                    ]
-                }
-            )
-            break
+        #     output_path = os.path.join(
+        #         "output_predictions", "modified_params_" + os.path.basename(image_path)
+        #     )
+        #     cv2.imwrite(output_path, img)
+        #     wandb.log(
+        #         {
+        #             "Val Prediction": [
+        #                 wandb.Image(img, caption=os.path.basename(image_path))
+        #             ]
+        #         }
+        #     )
+        #     break
 
     def log_metrics(self, results, split_name="test"):
         """
@@ -119,9 +119,9 @@ class Trainer(DefaultTrainer):
         """
 
         metrics = {
-            f"{split_name}_mAP": results["bbox"]["AP"],
-            f"{split_name}_AP50": results["bbox"]["AP50"],
-            f"{split_name}_AP75": results["bbox"]["AP75"],
+            f"{split_name}_AP_50:95": results["bbox"]["AP"],
+            # f"{split_name}_AP50": results["bbox"]["AP50"],
+            # f"{split_name}_AP75": results["bbox"]["AP75"],
         }
 
         wandb.log(metrics)
@@ -136,19 +136,35 @@ class Trainer(DefaultTrainer):
         val_loader = build_detection_test_loader(self.cfg, COCO_VAL_REG_NAME)
         results = inference_on_dataset(self.model, val_loader, evaluator)
 
-        print("Results Val")
+        print("\n VAL RESULTS")
         print(results)
 
-        # print("Evaluator")
-        # print(evaluator)
+        # These steps were to debug the printing of recall
 
-        # box_results = evaluator._results
-        # print("Box proposals")
-        # print(box_results)
+        # try:
+        #     evaluator.evaluate()
+        # except Exception as e:
+        #     print(f"Evaluate error: {e}")
 
-        coco_eval_results = COCOeval_opt.accumulate(COCOeval_opt)
-        print("coco_eval_results")
-        print(coco_eval_results)
+        # try:
+        #     evaluator.accumulate()
+        # except Exception as e:
+        #     print(f"Accumulate error: {e}")
+
+        # try:
+        #     evaluator.summarize()
+        # except Exception as e:
+        #     print(f"Summarize error: {e}")
+
+        # print("=========================")
+        # print(evaluator.stats)
+        # print("=========================")
+
+        # print("Results Val")
+        # print(results)
+
+        # print("coco eval results")
+        # print(evaluator._results)
 
         # coco_eval = DensePoseCocoEval(coco_gt, coco_dt, "densepose", dpEvalMode=DensePoseEvalMode.GPSM)
         # coco_eval.evaluate()

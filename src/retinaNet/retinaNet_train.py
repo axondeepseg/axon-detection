@@ -33,12 +33,6 @@ from retinaNet.constants.data_file_constants import (
     COCO_TRAIN_TEM_IMAGES,
     COCO_TEST_TEM_ANNOTATION,
     COCO_TEST_TEM_IMAGES,
-    # COCO_VAL_SEM_ANNOTATION,
-    # COCO_VAL_SEM_IMAGES,
-    # COCO_TRAIN_SEM_ANNOTATION,
-    # COCO_TRAIN_SEM_IMAGES,
-    # COCO_TEST_SEM_ANNOTATION,
-    # COCO_TEST_SEM_IMAGES,
     COCO_VAL_TEM_ANNOTATION,
     SEM_DATA_SPLIT,
     CONFIG_FILE,
@@ -200,8 +194,9 @@ def clear_data():
 if __name__ == "__main__":
 
     # # TODO: Run this only once when the registered metadata isnt the same as local
+
     # clear_data()
-    # preprocess_data_coco(SEM)
+    # preprocess_data_coco(TEM)
     visualize_true_labels(COCO_TEST_TEM_ANNOTATION, data_type=TEM, set_type="test")
 
     # TRAIN STEPS:
@@ -219,7 +214,7 @@ if __name__ == "__main__":
         project=WANDB_PROJECT,
         name=WANDB_RUN_NAME,
         dir="/output",
-        mode="offline",
+        # mode="offline",
     )
 
     run.config.update(
@@ -254,18 +249,18 @@ if __name__ == "__main__":
     model_trainer = Trainer(cfg)
 
     # TODO: Add when training
-    # model_trainer.resume_or_load(resume=False)
+    model_trainer.resume_or_load(resume=False)
 
     try:
         model_trainer.train()
     except Exception as e:
         print("Training stopped due to:" + str(e))
 
-    try:
-        final_val_metrics = model_trainer.evaluate()
-        run.log(final_val_metrics)
-    except Exception as e:
-        print("Validation run stopped due to:" + str(e))
+    # try:
+    #     final_val_metrics = model_trainer.evaluate()
+    #     run.log(final_val_metrics)
+    # except Exception as e:
+    #     print("Validation run stopped due to:" + str(e))
 
     try:
         final_test_metrics = model_trainer.test()

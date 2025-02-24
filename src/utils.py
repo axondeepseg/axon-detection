@@ -131,11 +131,11 @@ def split(image_mask_pairs: list, split_file="data_sem_split.json"):
     Saves the image names for both YOLO and COCO under 'yolo' and 'coco' keys in the split file.
     """
 
-    # if os.path.exists(split_file):
-    # print(f"Loading existing data split from {split_file}")
-    # with open(split_file, "r") as json_file:
-    #     data_split = json.load(json_file)
-    #     return data_split
+    if os.path.exists(split_file):
+        print(f"Loading existing data split from {split_file}")
+        with open(split_file, "r") as json_file:
+            data_split = json.load(json_file)
+            return data_split
 
     image_names = [pair[0] for pair in image_mask_pairs]
 

@@ -277,13 +277,8 @@ def preprocess_data_coco(
         if subject == "sidecar":
             continue
 
-        print("\n\nSubject")
-
-        print(f"- Len samples: {len(data_dict[subject])}")
-
         # for every sample of the mouse subject
         for sample in data_dict[subject].keys():
-            print(f"\nSAMPLE {sample}")
 
             if sample == "sidecar":
                 continue
@@ -297,11 +292,8 @@ def preprocess_data_coco(
             # FIXME: Remove normalize method since we removed these lines for TEM
             # img = utils.load_bids_image(img_path, pixel_size)
             # img = utils.normalize_and_window(img)
-            print(img_path)
 
             img = utils.load_bids_image(img_path)
-            print("img after")
-            print(img)
 
             img_height, img_width = img.shape[:2]
             image_info = {
@@ -318,7 +310,6 @@ def preprocess_data_coco(
             axon_seg_regions = utils.find_regions(axon_seg)
             axon_myelin_annotations = []
 
-            print(f" - Len regions: {len(axon_seg_regions)}")
             # for every region in axon regions
             for region in axon_seg_regions:
                 minr, minc, maxr, maxc = region.bbox
@@ -373,9 +364,6 @@ def save_split(split_data, images_dir, annotations):
     """Saves images to the specified directory and appends image and annotation metadata to the COCO annotations structure."""
     for image_name, img, image_info, axon_annotations in split_data:
         # Save the image in the appropriate directory
-
-        print("PATHHH")
-        print(os.path.join(images_dir, image_name))
 
         cv2.imwrite(os.path.join(images_dir, image_name), img)
 

@@ -8,4 +8,4 @@ WANDB_PROJECT = "retinanet-project"
 project_runs = api.runs(f"{WANDB_ENTITY}/{WANDB_PROJECT}")
 
 run_count = len(project_runs) + 1
-WANDB_RUN_NAME = f"SEM_run_{run_count}"
+WANDB_RUN_NAME = f"TEM_run_{run_count}"
