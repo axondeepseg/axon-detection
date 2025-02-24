@@ -235,7 +235,7 @@ class Trainer(DefaultTrainer):
                     blue = int(255 * scores[i])
                     color = (0, green, blue)
 
-                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
+                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 4)
 
                     label = f"{scores[i]:.2f}"
                     font_scale = 0.5
@@ -278,6 +278,7 @@ class Trainer(DefaultTrainer):
                     ]
                 }
             )
+            break
 
     def test(self):
         test_evaluator = COCOEvaluator(
