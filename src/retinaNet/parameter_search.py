@@ -6,6 +6,7 @@ from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.evaluation import COCOEvaluator
 from detectron2.model_zoo import get_config_file
 from constants.data_constants import TEM
+from retinaNet.constants.data_file_constants import COCO_TEST_REG_NAME
 from retinaNet.retinaNet_train import configure_detectron, reset_instances, register_instances
 
 from retinaNet.constants.wanb_config_constants import WANDB_ENTITY, WANDB_PARAM_SEARCH, WANDB_RUN_NAME
@@ -26,7 +27,7 @@ def train_and_evaluate(config_file, num_classes, base_lr, ims_per_batch, warmup_
     trainer.resume_or_load(resume=False)
     trainer.train()
     
-    evaluator = COCOEvaluator("my_dataset_val", cfg, False, output_dir=cfg.OUTPUT_DIR)
+    evaluator = COCOEvaluator(COCO_TEST_REG_NAME, cfg, False, output_dir=cfg.OUTPUT_DIR)
     val_results = trainer.test(cfg, trainer.model, evaluators=[evaluator])
     return val_results
 
