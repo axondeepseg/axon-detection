@@ -39,7 +39,7 @@ def hyperparameter_search(config_file, num_classes, search_space):
         print(f"Training with params: {params}")
         
         run_name = f"RUN_LR-{params["base_lr"]}_BATCH-{params["ims_per_batch"]}_WARMUP-{params["warmup_iters"]}"
-        wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name="param_run")
+        wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name)
         results = train_and_evaluate(config_file, num_classes, **params)
         
         wandb.log({"params": params, **results})

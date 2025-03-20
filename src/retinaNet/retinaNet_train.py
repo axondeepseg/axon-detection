@@ -88,6 +88,7 @@ def reset_instances():
         if annotation in list(DatasetCatalog):
             DatasetCatalog.remove(annotation)
 
+    print("METADATA CATALOG")
     print(list(MetadataCatalog))
 
 
@@ -118,6 +119,8 @@ def configure_detectron():
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
     cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 5
     cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
+    
+    cfg.MODEL.RETINANET.BBOX_REG_LOSS_TYPE = "smooth_l1"
 
     # TODO: Find right anchor boxes through kera script
     # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
