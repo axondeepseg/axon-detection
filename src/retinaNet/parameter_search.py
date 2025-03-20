@@ -1,92 +1,56 @@
+import itertools
 import wandb
+from detectron2.engine import DefaultTrainer
 from detectron2.config import get_cfg
-from detectron2 import model_zoo
+from detectron2.data import MetadataCatalog, DatasetCatalog
+from detectron2.evaluation import COCOEvaluator
+from detectron2.model_zoo import get_config_file
+from constants.data_constants import TEM
+from retinaNet.retinaNet_train import configure_detectron, reset_instances, register_instances
 
-from retinaNet.constants.config_constants import CONF_THRESHOLD
-from retinaNet.constants.data_file_constants import COCO_TEST_ANNOTATION, COCO_TRAIN_ANNOTATION, CONFIG_FILE, OUTPUT_DIR
-from retinaNet.constants.wanb_config_constants import WANDB_ENTITY
-from retinaNet.trainer import Trainer
+from retinaNet.constants.wanb_config_constants import WANDB_ENTITY, WANDB_PARAM_SEARCH, WANDB_RUN_NAME
 
-from retinaNet.retinaNet_train import register_instances
-
-def configure_detectron_sweep(sweep_config):
-    """
-    Create detectron config based on sweep parameters
-    """
-    cfg = get_cfg()
-    cfg.merge_from_file(model_zoo.get_config_file(CONFIG_FILE))
-    cfg.DATASETS.TRAIN = (COCO_TRAIN_ANNOTATION,)
-    cfg.DATASETS.TEST = (COCO_TEST_ANNOTATION,)
-    cfg.DATALOADER.NUM_WORKERS = 2
-    cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)  
-
-    # Update with sweep parameters
-    cfg.SOLVER.BASE_LR = sweep_config["learning_rate"]
-    cfg.SOLVER.IMS_PER_BATCH = sweep_config["batch_size"]
-    cfg.SOLVER.MAX_ITER = 60
-    cfg.SOLVER.STEPS = []  # Learning rate remains stable by default
-    # cfg.SOLVER.GAMMA = 1.0
-    cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = sweep_config["roi_batch_size"]
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
-    cfg.MODEL.DEVICE = "cpu"
-    cfg.OUTPUT_DIR = OUTPUT_DIR
-    cfg.TEST.DETECTIONS_PER_IMAGE = 2000
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
-
+def get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter):
+    cfg = configure_detectron()
+    cfg.MODEL.RETINANET.NUM_CLASSES = num_classes
+    cfg.SOLVER.BASE_LR = base_lr
+    cfg.SOLVER.IMS_PER_BATCH = ims_per_batch
+    cfg.SOLVER.WARMUP_ITERS = warmup_iters
+    cfg.SOLVER.MAX_ITER = max_iter
+    cfg.OUTPUT_DIR = "./output/"
     return cfg
 
+def train_and_evaluate(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter):
+    cfg = get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter)
+    trainer = DefaultTrainer(cfg)
+    trainer.resume_or_load(resume=False)
+    trainer.train()
+    
+    evaluator = COCOEvaluator("my_dataset_val", cfg, False, output_dir=cfg.OUTPUT_DIR)
+    val_results = trainer.test(cfg, trainer.model, evaluators=[evaluator])
+    return val_results
 
-def train():
-    """
-    Main function to train the model for the sweep.
-    """
-    with wandb.init() as run:
-        sweep_config = wandb.config
-
-        parameters = {
-            "Parameters/learning_rate": wandb.config.learning_rate,
-            "Parameters/batch_size": wandb.config.batch_size,
-            "Parameters/max_iter": wandb.config.max_iter,
-            "Parameters/roi_batch_size": wandb.config.roi_batch_size
-        }
+def hyperparameter_search(config_file, num_classes, search_space):
+    
+    keys, values = zip(*search_space.items())
+    for v in itertools.product(*values):
+        params = dict(zip(keys, v))
+        print(f"Training with params: {params}")
         
-        # Log hyperparameters explicitly
-        wandb.config.update(parameters)
-        wandb.log(parameters)
+        run_name = f"RUN_LR-{params["base_lr"]}_BATCH-{params["ims_per_batch"]}_WARMUP-{params["warmup_iters"]}"
+        wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name="param_run")
+        results = train_and_evaluate(config_file, num_classes, **params)
         
-        cfg = configure_detectron_sweep(sweep_config)
-
-        trainer = Trainer(cfg)
-        trainer.resume_or_load(resume=False)
-
-        try:
-            trainer.train()
-        except Exception as e:
-            print(f"Training or evaluation stopped due to: {e}")
-
-        evaluation_results = trainer.evaluate()
-        mAP = evaluation_results["bbox"]["AP"]
-        wandb.log({"Validation/Average_Precision": evaluation_results})
-
-        wandb.log({"mAP": mAP})
-        print('\nWANDB mAP score')
-        print(mAP)
-
-
+        wandb.log({"params": params, **results})
+    
 if __name__ == "__main__":
-
-    register_instances()
-
-    sweep_config = {
-        "method": "grid",
-        "parameters": {
-            "learning_rate": {"values": [0.0001, 0.00025, 0.001]},
-            "batch_size": {"values": [2]},
-            "max_iter": {"values": [60]},
-            "roi_batch_size": {"values": [128, 256]},
-            "learning_rate_decay": {"values": [1.0, 0.01]},
-        },
+    reset_instances()
+    register_instances(TEM)
+    
+    search_space = {
+        "base_lr": [0.001, 0.0005],
+        "ims_per_batch": [1, 2],
+        "warmup_iters": [20, 40],
+        "max_iter": [350]
     }
-
-    sweep_id = wandb.sweep(sweep_config, project="retinanet-parameter_search")
-    wandb.agent(sweep_id, function=train)
+    hyperparameter_search("COCO-Detection/retinanet_R_50_FPN_3x.yaml", 2, search_space)

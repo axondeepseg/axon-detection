@@ -39,7 +39,7 @@ def visualize_true_labels(annotations_path, data_type="sem", set_type="test"):
             bbox = annotation["bbox"]
             x, y, width, height = bbox
             x2, y2 = int(x + width), int(y + height)
-            cv2.rectangle(image, (int(x), int(y)), (x2, y2), (255, 0, 0), 3)
+            cv2.rectangle(image, (int(x), int(y)), (x2, y2), (0, 255, 0), thickness=7)
 
         output_path = os.path.join(output_directory, os.path.basename(image_path))
 
