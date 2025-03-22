@@ -28,7 +28,7 @@ def train_and_evaluate(config_file, base_lr, ims_per_batch, warmup_iters, max_it
     trainer.train()
     
     evaluator = COCOEvaluator(COCO_TEST_REG_NAME, cfg, False, output_dir=cfg.OUTPUT_DIR)
-    val_results = trainer.test()
+    val_results = trainer.test(cfg, trainer.model, evaluators=[evaluator])
     return val_results
 
 def hyperparameter_search(config_file, search_space):
