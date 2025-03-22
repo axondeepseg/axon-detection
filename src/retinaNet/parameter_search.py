@@ -10,6 +10,7 @@ from retinaNet.constants.data_file_constants import COCO_TEST_REG_NAME
 from retinaNet.retinaNet_train import configure_detectron, reset_instances, register_instances
 
 from retinaNet.constants.wanb_config_constants import WANDB_ENTITY, WANDB_PARAM_SEARCH, WANDB_RUN_NAME
+from retinaNet.trainer import Trainer
 
 def get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter):
     cfg = configure_detectron()
@@ -23,7 +24,7 @@ def get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters
 
 def train_and_evaluate(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter):
     cfg = get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter)
-    trainer = DefaultTrainer(cfg)
+    trainer = Trainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
     
