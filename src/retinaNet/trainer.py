@@ -18,13 +18,8 @@ except ImportError:
     COCOeval_opt = COCOeval
 
 
-# from detectron2.evaluation.coco_evaluation import _evaluate_box_proposals
 
 from detectron2.data.catalog import MetadataCatalog
-
-# from detectron2.projects.DensePose.densepose.densepose_coco_evaluation import (
-#     DensePoseCocoEval,
-# )
 
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
@@ -44,6 +39,7 @@ class Trainer(DefaultTrainer):
 
     def run_step(self):
         super().run_step()
+        print("running step!")
 
         metrics_dict = {
             key: float(value[0]) for key, value in self.storage._latest_scalars.items()
@@ -69,8 +65,6 @@ class Trainer(DefaultTrainer):
             print("Validation run stopped due to:" + str(e))
 
         # PREDICTION part for VAL visualization of result
-
-        # self.evaluate()
 
         current_lr = self.optimizer.param_groups[0]["lr"]
         print(
@@ -127,9 +121,6 @@ class Trainer(DefaultTrainer):
         wandb.log(metrics)
 
     def evaluate(self):
-        # thing_classes = MetadataCatalog.get(COCO_VAL_ANNOTATION)
-        # print('thing classes')
-        # print(thing_classes)
         evaluator = COCOEvaluator(
             COCO_VAL_REG_NAME, output_dir="./output/", max_dets_per_image=1000
         )
@@ -284,7 +275,7 @@ class Trainer(DefaultTrainer):
                             wandb.Image(img, caption=os.path.basename(image_path))
                         ]
                     }
-                )
+                ) 
 
     def test(self):
         test_evaluator = COCOEvaluator(
