@@ -56,20 +56,20 @@ class Trainer(DefaultTrainer):
         training_time = time.time() - self.start_time
         wandb.log({"training_time": training_time})
 
-        # PREDICTION part for VAL PRECISION / RECALL
+        # VAL PREDICTION part for PRECISION / RECALL
 
-        try:
-            final_val_metrics = self.evaluate()
-            print(f"\nVAL METRICS ARE: {final_val_metrics}")
-        except Exception as e:
-            print("Validation run stopped due to:" + str(e))
+        # try:
+        #     final_val_metrics = self.evaluate()
+        #     print(f"\nVAL METRICS ARE: {final_val_metrics}")
+        # except Exception as e:
+        #     print("Validation run stopped due to:" + str(e))
 
-        # PREDICTION part for VAL visualization of result
+        # VAL PREDICTION visualization of result
 
-        current_lr = self.optimizer.param_groups[0]["lr"]
-        print(
-            f"\nLR at iteration={current_iteration} & epoch={current_iteration / 8}: {current_lr}"
-        )
+        # current_lr = self.optimizer.param_groups[0]["lr"]
+        # print(
+        #     f"\nLR at iteration={current_iteration} & epoch={current_iteration / 8}: {current_lr}"
+        # )
 
         # self.predictor.model.load_state_dict(self.model.state_dict())
 
