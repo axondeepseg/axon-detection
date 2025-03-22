@@ -12,9 +12,8 @@ from retinaNet.retinaNet_train import configure_detectron, reset_instances, regi
 from retinaNet.constants.wanb_config_constants import WANDB_ENTITY, WANDB_PARAM_SEARCH, WANDB_RUN_NAME
 from retinaNet.trainer import Trainer
 
-def get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter):
+def get_train_cfg(config_file, base_lr, ims_per_batch, warmup_iters, max_iter):
     cfg = configure_detectron()
-    cfg.MODEL.RETINANET.NUM_CLASSES = num_classes
     cfg.SOLVER.BASE_LR = base_lr
     cfg.SOLVER.IMS_PER_BATCH = ims_per_batch
     cfg.SOLVER.WARMUP_ITERS = warmup_iters
@@ -22,8 +21,8 @@ def get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters
     cfg.OUTPUT_DIR = "./output/"
     return cfg
 
-def train_and_evaluate(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter):
-    cfg = get_train_cfg(config_file, num_classes, base_lr, ims_per_batch, warmup_iters, max_iter)
+def train_and_evaluate(config_file, base_lr, ims_per_batch, warmup_iters, max_iter):
+    cfg = get_train_cfg(config_file, base_lr, ims_per_batch, warmup_iters, max_iter)
     trainer = Trainer(cfg)
     trainer.resume_or_load(resume=False)
     trainer.train()
@@ -32,7 +31,7 @@ def train_and_evaluate(config_file, num_classes, base_lr, ims_per_batch, warmup_
     val_results = trainer.test(cfg, trainer.model, evaluators=[evaluator])
     return val_results
 
-def hyperparameter_search(config_file, num_classes, search_space):
+def hyperparameter_search(config_file, search_space):
     
     keys, values = zip(*search_space.items())
     for v in itertools.product(*values):
@@ -41,7 +40,7 @@ def hyperparameter_search(config_file, num_classes, search_space):
         
         run_name = f"RUN_LR-{params["base_lr"]}_BATCH-{params["ims_per_batch"]}_WARMUP-{params["warmup_iters"]}"
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name)
-        results = train_and_evaluate(config_file, num_classes, **params)
+        results = train_and_evaluate(config_file, **params)
         
         wandb.log({"params": params, **results})
     
@@ -51,8 +50,8 @@ if __name__ == "__main__":
     
     search_space = {
         "base_lr": [0.001, 0.0005],
-        "ims_per_batch": [1, 2],
-        "warmup_iters": [20, 40],
-        "max_iter": [350]
+        "ims_per_batch": [1],
+        "warmup_iters": [20, 50, 80],
+        "max_iter": [250]
     }
-    hyperparameter_search("COCO-Detection/retinanet_R_50_FPN_3x.yaml", 2, search_space)
+    hyperparameter_search("COCO-Detection/retinanet_R_50_FPN_3x.yaml", 1, search_space)
