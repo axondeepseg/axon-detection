@@ -54,4 +54,4 @@ if __name__ == "__main__":
         "warmup_iters": [20, 50, 80],
         "max_iter": [250]
     }
-    hyperparameter_search("COCO-Detection/retinanet_R_50_FPN_3x.yaml", 1, search_space)
+    hyperparameter_search("COCO-Detection/retinanet_R_50_FPN_3x.yaml", search_space)
