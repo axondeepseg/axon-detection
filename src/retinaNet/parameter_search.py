@@ -51,7 +51,7 @@ if __name__ == "__main__":
     search_space = {
         "base_lr": [0.001, 0.0005],
         "ims_per_batch": [1],
-        "warmup_iters": [20, 50, 80],
+        "warmup_iters": [50, 80],
         "max_iter": [250]
     }
     hyperparameter_search("COCO-Detection/retinanet_R_50_FPN_3x.yaml", search_space)
