@@ -39,10 +39,11 @@ def hyperparameter_search(config_file, search_space):
         print(f"Training with params: {params}")
         
         run_name = f"RUN_LR-{params["base_lr"]}_BATCH-{params["ims_per_batch"]}_WARMUP-{params["warmup_iters"]}"
-        wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name)
+        wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name, reinit=True)
         results = train_and_evaluate(config_file, **params)
         
         wandb.log({"params": params, **results})
+        wandb.finish()
     
 if __name__ == "__main__":
     reset_instances()
