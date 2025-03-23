@@ -18,6 +18,7 @@ def get_train_cfg(search_space):
     cfg["MODEL"]["RETINANET"]["FOCAL_LOSS_GAMMA"] = search_space.get("FOCAL_LOSS_GAMMA")
     cfg["MODEL"]["RETINANET"]["BBOX_REG_LOSS_TYPE"] = search_space.get("BBOX_REG_LOSS_TYPE")
     cfg["MODEL"]["RETINANET"]["FOCAL_LOSS_ALPHA"] = search_space.get("FOCAL_LOSS_ALPHA")
+    cfg["MODEL"]["ANCHOR_GENERATOR"]["SIZES"] = search_space.get("SIZES")
         
     return cfg
 
@@ -38,7 +39,7 @@ def hyperparameter_search(search_space):
         params = dict(zip(keys, v))
         print(f"Training with params: {params}")
         
-        run_name = f"FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}_FOCAL_LOSS_ALPHA:{params["FOCAL_LOSS_ALPHA"]}"
+        run_name = f"FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}_A-SIZES:{params["SIZES"]}"
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name, reinit=True)
         results = train_and_evaluate(params)
         
@@ -53,6 +54,7 @@ if __name__ == "__main__":
         "MAX_ITER": [250],
         "BBOX_REG_LOSS_TYPE": ["smooth_l1"],
         "FOCAL_LOSS_GAMMA": [1], 
-        "FOCAL_LOSS_ALPHA": [0.5, 0.6, 0.7]
+        "FOCAL_LOSS_ALPHA": [0.5],
+        "SIZES": [16, 32, 64, 128, 256]
     }
     hyperparameter_search(search_space)

@@ -124,13 +124,13 @@ def configure_detectron():
         raise RuntimeError("CUDA is not available, but GPU mode was requested!")
 
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = CONF_THRESHOLD
-    cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 5
+    cfg.MODEL.RETINANET.FOCAL_LOSS_GAMMA = 1
     cfg.MODEL.RETINANET.FOCAL_LOSS_ALPHA = 0.5
     
     cfg.MODEL.RETINANET.BBOX_REG_LOSS_TYPE = "smooth_l1"
 
     # TODO: Find right anchor boxes through kera script
-    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [16, 32, 64, 128, 256]
 
     # This makes boxes ++ faster, but no boxes shown
     # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.3, 0.5, 1.0, 2.0]]
