@@ -39,7 +39,7 @@ def hyperparameter_search(search_space):
         params = dict(zip(keys, v))
         print(f"Training with params: {params}")
         
-        run_name = f"FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}_A-SIZES_no_resize:{params["SIZES"]}"
+        run_name = f"FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}"
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name, reinit=True)
         results = train_and_evaluate(params)
         
@@ -55,6 +55,5 @@ if __name__ == "__main__":
         "BBOX_REG_LOSS_TYPE": ["smooth_l1"],
         "FOCAL_LOSS_GAMMA": [1], 
         "FOCAL_LOSS_ALPHA": [0.5],
-        "SIZES": [[0.436], [1.0], [2.295]]
     }
     hyperparameter_search(search_space)
