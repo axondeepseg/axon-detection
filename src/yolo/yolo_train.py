@@ -29,8 +29,9 @@ if __name__ == "__main__":
 
     trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)    
     trainer.run_step()
+    
+    trainer.evaluate_model()
 
     # example usage to visualize ground truth - change lines 9 and 10 if you want to see the ground truths for another set
     # trainer.visualize_ground_truth(test_dir=IMAGES_PATH, labels_dir=LABELS_PATH)
     
-

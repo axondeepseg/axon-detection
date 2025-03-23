@@ -15,9 +15,9 @@ class WandbTrainer:
         self.start_time = time.time()
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
 
-    def __del__(self):
-        if wandb.run:
-            wandb.finish()
+    # def __del__(self):
+    #     if wandb.run:
+    #         wandb.finish()
     
     def run_step(self):
         results = self.model.train(
@@ -154,6 +154,29 @@ class WandbTrainer:
             wandb.log({"Ground Truth": [wandb.Image(img, caption=os.path.basename(image_path))]})
 
         print("Ground truth visualized and logged to wandb.")
+        
+        
+    def evaluate_model(self):
+        print("Evaluating model on test set...")
 
+        results = self.model.val(data=self.cfg['data'], split="test")
 
+        # Extract evaluation metrics
+        metrics_dict = results.results_dict
+        ap_50 = metrics_dict.get('metrics/mAP_50', None)
+        ap_50_95 = metrics_dict.get('metrics/mAP_50-95', None)
+        ar = metrics_dict.get('metrics/AR', None)
+
+        print(f"AP @ 0.5: {ap_50}")
+        print(f"AP @ 0.5:0.95: {ap_50_95}")
+        print(f"AR: {ar}")
+
+        # Log to Weights & Biases
+        wandb.log({
+            "AP@0.5": ap_50,
+            "AP@0.5:0.95": ap_50_95,
+            "AR": ar
+        })
+
+        print("Evaluation complete and metrics logged to wandb.")
 
