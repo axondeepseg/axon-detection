@@ -166,8 +166,8 @@ class WandbTrainer:
         print(f"results.results_dict: {results.results_dict}")
         
         ap_50 = metrics_dict.get('metrics/mAP_50', None)
-        ap_50_95 = metrics_dict.get('metrics/mAP_50-95', None)
-        ar = metrics_dict.get('metrics/AR', None)
+        ap_50_95 = metrics_dict.get('metrics/mAP_50-95(B)', None)
+        ar = metrics_dict.get('metrics/recall(B)', None)
 
         print(f"AP @ 0.5: {ap_50}")
         print(f"AP @ 0.5:0.95: {ap_50_95}")

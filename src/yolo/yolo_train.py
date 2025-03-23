@@ -18,7 +18,7 @@ if __name__ == "__main__":
     config = {
         # NOTE: "datasets_dir" in settings.json of Ultralytics should look like this:  "\\axon-detection"
         'data': DATA_YAML_PATH,
-        'epochs': 10,
+        'epochs': 3,
         'imgsz': 640,
         'optimizer': 'adam',
         'rect': True,
