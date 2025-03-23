@@ -18,7 +18,6 @@ def get_train_cfg(search_space):
     cfg["MODEL"]["RETINANET"]["FOCAL_LOSS_GAMMA"] = search_space.get("FOCAL_LOSS_GAMMA")
     cfg["MODEL"]["RETINANET"]["BBOX_REG_LOSS_TYPE"] = search_space.get("BBOX_REG_LOSS_TYPE")
     cfg["MODEL"]["RETINANET"]["FOCAL_LOSS_ALPHA"] = search_space.get("FOCAL_LOSS_ALPHA")
-    cfg["MODEL"]["ANCHOR_GENERATOR"]["SIZES"] = search_space.get("SIZES")
         
     return cfg
 
