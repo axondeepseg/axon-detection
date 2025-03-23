@@ -37,7 +37,7 @@ def hyperparameter_search(search_space):
         params = dict(zip(keys, v))
         print(f"Training with params: {params}")
         
-        run_name = f"RUN_BBOX_LOSS:{params["RETINANET.BBOX_REG_LOSS_TYPE"]}_FL_GAMMA:{params["RETINANET.FOCAL_LOSS_GAMMA"]}"
+        run_name = f"RUN_BBOX_LOSS:{params["BBOX_REG_LOSS_TYPE"]}_FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}"
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name, reinit=True)
         results = train_and_evaluate(params)
         
