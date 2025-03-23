@@ -13,9 +13,10 @@ from retinaNet.trainer import Trainer
 
 def get_train_cfg(search_space):
     cfg = configure_detectron()
-    
-    for key, value in search_space:
-        cfg["RETINANET"][key] = value
+        
+    cfg["SOLVER"]["MAX_ITER"] = search_space.get("MAX_ITER")
+    cfg["MODEL"]["RETINANET"]["FOCAL_LOSS_GAMMA"] = search_space.get("FOCAL_LOSS_GAMMA")
+    cfg["MODEL"]["RETINANET"]["BBOX_REG_LOSS_TYPE"] = search_space.get("BBOX_REG_LOSS_TYPE")
         
     cfg.OUTPUT_DIR = "./output/"
     return cfg
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     register_instances(TEM)
     
     search_space = {
-        "max_iter": [250],
+        "MAX_ITER": [250],
         "BBOX_REG_LOSS_TYPE": ["smooth_l1", "giou"],
         "FOCAL_LOSS_GAMMA": [2, 5, 6, 8]
     }
