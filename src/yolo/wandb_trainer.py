@@ -14,7 +14,7 @@ class WandbTrainer:
         self.cfg = config  
         self.start_time = time.time()
         wandb.login()
-        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME)
+        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, mode="online")
 
     # def __del__(self):
     #     if wandb.run:
@@ -184,6 +184,12 @@ class WandbTrainer:
             "AP@0.5:0.95": ap_50_95,
             "AR": ar
         })
+        
+        print("WandB Run Details:")
+        print(f"Run ID: {wandb.run.id}")
+        print(f"Run Name: {wandb.run.name}")
+        print(f"Run URL: {wandb.run.get_url()}")
+        print(f"Project: {wandb.run.project}")
 
         print("Evaluation complete and metrics logged to wandb.")
         
