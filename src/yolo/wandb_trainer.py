@@ -174,6 +174,7 @@ class WandbTrainer:
         print(f"AP @ 0.5: {ap_50}")
         print(f"AP @ 0.5:0.95: {ap_50_95}")
         print(f"AR: {ar}")
+        print("WandB Run :", wandb.run)
         print("WandB Run URL:", wandb.run.get_url())
 
 
