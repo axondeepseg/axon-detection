@@ -277,7 +277,7 @@ class Trainer(DefaultTrainer):
                     }
                 ) 
 
-    def test(self):
+    def test(self, cfg, model):
         test_evaluator = COCOEvaluator(
             COCO_TEST_REG_NAME, output_dir="./output/", max_dets_per_image=1000
         )
