@@ -52,7 +52,7 @@ if __name__ == "__main__":
     search_space = {
         "MAX_ITER": [250],
         "BBOX_REG_LOSS_TYPE": ["smooth_l1"],
-        "FOCAL_LOSS_GAMMA": [1, 1.5, 2], 
-        "FOCAL_LOSS_ALPHA": [0.5, 1]
+        "FOCAL_LOSS_GAMMA": [1], 
+        "FOCAL_LOSS_ALPHA": [0.5, 0.6, 0.7]
     }
     hyperparameter_search(search_space)
