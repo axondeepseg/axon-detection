@@ -14,7 +14,7 @@ class WandbTrainer:
         self.cfg = config  
         self.start_time = time.time()
         wandb.login()
-        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
+        wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME)
 
     # def __del__(self):
     #     if wandb.run:
