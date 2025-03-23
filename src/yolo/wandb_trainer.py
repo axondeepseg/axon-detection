@@ -163,6 +163,8 @@ class WandbTrainer:
 
         # Extract evaluation metrics
         metrics_dict = results.results_dict
+        print(f"results.results_dict: {results.results_dict}")
+        
         ap_50 = metrics_dict.get('metrics/mAP_50', None)
         ap_50_95 = metrics_dict.get('metrics/mAP_50-95', None)
         ar = metrics_dict.get('metrics/AR', None)
