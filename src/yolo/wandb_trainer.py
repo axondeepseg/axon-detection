@@ -13,6 +13,7 @@ class WandbTrainer:
         self.model = YOLO(model_path)
         self.cfg = config  
         self.start_time = time.time()
+        wandb.login()
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PROJECT, name=WANDB_RUN_NAME, id=WANDB_RUN_ID)
 
     # def __del__(self):
@@ -155,6 +156,9 @@ class WandbTrainer:
 
         print("Ground truth visualized and logged to wandb.")
         
+    def print_wandb():
+        wandb.log({"test_value": "hello"})
+        
         
     def evaluate_model(self):
         print("Evaluating model on test set...")
@@ -172,6 +176,8 @@ class WandbTrainer:
         print(f"AP @ 0.5: {ap_50}")
         print(f"AP @ 0.5:0.95: {ap_50_95}")
         print(f"AR: {ar}")
+        print("WandB Run URL:", wandb.run.get_url())
+
 
         # Log to Weights & Biases
         wandb.log({
@@ -181,4 +187,6 @@ class WandbTrainer:
         })
 
         print("Evaluation complete and metrics logged to wandb.")
+        
+        wandb.finish()
 
