@@ -29,7 +29,6 @@ if __name__ == "__main__":
 
     trainer = WandbTrainer(model_path="./yolov8n.pt", config=config)    
     trainer.run_step()
-    trainer.print_wandb()
     
     trainer.evaluate_model()
 

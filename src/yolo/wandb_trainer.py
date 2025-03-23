@@ -156,11 +156,9 @@ class WandbTrainer:
 
         print("Ground truth visualized and logged to wandb.")
         
-    def print_wandb():
-        wandb.log({"test_value": "hello"})
-        
         
     def evaluate_model(self):
+        wandb.log({"test_value": "hello"})
         print("Evaluating model on test set...")
 
         results = self.model.val(data=self.cfg['data'], split="test")
