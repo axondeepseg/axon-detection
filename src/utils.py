@@ -60,8 +60,6 @@ def adjust_pixel_values(img, pixel_size):
 def load_bids_image(image_path, pixel_size_metadata=None):
     """Loads a BIDS-formatted image and adjusts pixel values if needed."""
     img = cv2.imread(image_path)
-    print("img")
-    print(img)
     if pixel_size_metadata:
         img = adjust_pixel_values(img, pixel_size_metadata)
     return img
