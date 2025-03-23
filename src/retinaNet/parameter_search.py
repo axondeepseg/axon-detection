@@ -38,7 +38,7 @@ def hyperparameter_search(search_space):
         params = dict(zip(keys, v))
         print(f"Training with params: {params}")
         
-        run_name = f"FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}"
+        run_name = f"FL_GAMMA:{params["FOCAL_LOSS_GAMMA"]}_ANCHOR-SIZES"
         wandb.init(entity=WANDB_ENTITY, project=WANDB_PARAM_SEARCH, name=run_name, reinit=True)
         results = train_and_evaluate(params)
         
