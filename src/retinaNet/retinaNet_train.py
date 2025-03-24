@@ -44,6 +44,9 @@ from retinaNet.constants.wanb_config_constants import (
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
 
+from detectron2.modeling import build_model
+from detectron2.modeling.anchor_generator import build_anchor_generator
+
 from detectron2.data import transforms as T
 
 from detectron2.modeling import BACKBONE_REGISTRY, Backbone
@@ -196,11 +199,12 @@ def configure_detectron():
         T.RandomLighting(0.7),
     ]
 
-    # TODO: Find right anchor boxes through kera script
-    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[16], [32], [64], [128], [256]]
-
-    # This makes boxes ++ faster, but no boxes shown
-    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.584, 1.484, 1.901]]
+    # TODO: Find right anchor boxes
+    
+    model = build_model(cfg)
+    input_shape = model.backbone.output_shape 
+    anchor_generator = build_anchor_generator(cfg, input_shape)
+    model.roi_heads.box_predictor.anchor_generator = anchor_generator
 
     print("\n -- model")
     print(cfg.MODEL)

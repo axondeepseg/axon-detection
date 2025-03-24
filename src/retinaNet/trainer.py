@@ -162,7 +162,7 @@ class Trainer(DefaultTrainer):
         # coco_eval.accumulate()
         # coco_eval.summarize()
 
-        self.log_metrics(results, "val")
+        self.log_metrics(results, "test")
         wandb.log(results)
         return results
 
