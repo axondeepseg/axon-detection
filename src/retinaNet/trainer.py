@@ -226,12 +226,7 @@ class Trainer(DefaultTrainer):
                     if scores[i] > conf_threshold:
                         x1, y1, x2, y2 = map(int, box)
 
-                        # TODO: Revise color gradient
-                        green = int(255 * (1 - scores[i]))
-                        blue = int(255 * scores[i])
-                        color = (0, blue, green)
-
-                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), thickness=9)
+                        cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), thickness=9)
 
                         label = f"{scores[i]:.2f}"
                         font_scale = 0.5
@@ -242,23 +237,6 @@ class Trainer(DefaultTrainer):
                         text_x = x1
                         text_y = y1 - 5
                         text_y = max(text_y, 10)
-
-                        # cv2.rectangle(
-                        #     img,
-                        #     (text_x, text_y - text_size[1]),
-                        #     (text_x + text_size[0], text_y),
-                        #     color,
-                        #     -1,
-                        # )
-                        # cv2.putText(
-                        #     img,
-                        #     label,
-                        #     (text_x, text_y - 2),
-                        #     cv2.FONT_HERSHEY_SIMPLEX,
-                        #     font_scale,
-                        #     (255, 255, 255),
-                        #     font_thickness,
-                        # )
 
                 output_path = os.path.join(
                     output_directory, os.path.basename(image_path)
