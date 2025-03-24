@@ -138,7 +138,7 @@ def configure_detectron():
         # T.RandomContrast(0.8, 1.2),
         # T.RandomSaturation(0.8, 1.2),
         # T.RandomLighting(0.7),
-        T.RandomRotation(angle=[-10, 10]),
+        T.RandomRotation(angle=[-5, 5]),
     ]
 
     # TODO: Find right anchor boxes through kera script
