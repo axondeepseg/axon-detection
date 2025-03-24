@@ -58,9 +58,9 @@ class EfficientNetBackbone(Backbone):
         super().__init__()
         self.model = timm.create_model("tf_efficientnet_b5", features_only=True, pretrained=True)
         
-        self._out_features = ["0", "1", "2", "3"]
-        self._out_feature_channels = {"0": 40, "1": 64, "2": 176, "3": 2048} 
-        self._out_feature_strides = {"0": 4, "1": 8, "2": 16, "3": 32}
+        self._out_features = ["0", "1", "2", "3", "4"]
+        self._out_feature_channels = {"0": 40, "1": 64, "2": 176, "3": 2048, "4": 3072} 
+        self._out_feature_strides = {"0": 4, "1": 8, "2": 16, "3": 32, "4": 64}
 
         self.proj_layers = nn.ModuleDict({
             key: nn.Conv2d(self._out_feature_channels[key], 256, kernel_size=1)
@@ -69,6 +69,8 @@ class EfficientNetBackbone(Backbone):
 
     def forward(self, x):
         features = self.model(x)
+        extra_feature = torch.nn.functional.adaptive_avg_pool2d(features[-1], output_size=(1, 1))  # Global pooling
+        features.append(extra_feature)  # Append extra feature
         return {str(i): self.proj_layers[str(i)](f) for i, f in enumerate(features)}
 
     def output_shape(self):
@@ -153,7 +155,7 @@ def configure_detectron():
     cfg.MODEL.BACKBONE.NAME = "EfficientNetBackbone"
     cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53] 
     cfg.MODEL.PIXEL_STD = [58.395, 57.12, 57.375]
-    cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3"]
+    cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3", "4"]
 
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
