@@ -69,8 +69,19 @@ class EfficientNetBackbone(Backbone):
 
     def forward(self, x):
         features = self.model(x)
-        extra_feature = torch.nn.functional.adaptive_avg_pool2d(features[-1], output_size=(1, 1))  # Global pooling
-        features.append(extra_feature)  # Append extra feature
+        
+        for i, f in enumerate(features):
+            print(f"Feature {i} shape: {f.shape}") 
+        
+        extra_feature = torch.nn.functional.adaptive_avg_pool2d(features[-1], output_size=(1, 1)) 
+        features.append(extra_feature) 
+        projected_features = {}
+        
+        for i, f in enumerate(features):
+            feature_name = str(i)
+            print(f"Applying Conv2d to Feature {feature_name} with shape {f.shape}")
+            projected_features[feature_name] = self.proj_layers[feature_name](f)
+            
         return {str(i): self.proj_layers[str(i)](f) for i, f in enumerate(features)}
 
     def output_shape(self):
