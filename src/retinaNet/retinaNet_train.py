@@ -70,8 +70,6 @@ class EfficientNetBackbone(Backbone):
     def forward(self, x):
         features = self.model(x)
         
-        for i, f in enumerate(features):
-            print(f"Feature {i} shape: {f.shape}") 
         
         extra_feature = torch.nn.functional.adaptive_avg_pool2d(features[-1], output_size=(1, 1)) 
         features.append(extra_feature) 
@@ -80,6 +78,11 @@ class EfficientNetBackbone(Backbone):
         for i, f in enumerate(features):
             feature_name = str(i)
             print(f"Applying Conv2d to Feature {feature_name} with shape {f.shape}")
+            
+            if feature_name not in self.proj_layers:
+                print(f"Warning: {feature_name} is not in proj_layers.")
+                continue
+            
             projected_features[feature_name] = self.proj_layers[feature_name](f)
             
         return {str(i): self.proj_layers[str(i)](f) for i, f in enumerate(features)}
