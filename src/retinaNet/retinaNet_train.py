@@ -10,6 +10,8 @@ from detectron2.utils.logger import setup_logger
 from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import DefaultPredictor
 
+from detectron2.utils.analysis import analyze_scale
+
 from preprocessing import preprocess_data_coco
 from utils import clear_directories_coco
 
@@ -44,6 +46,29 @@ from retinaNet.constants.wanb_config_constants import (
 from retinaNet.constants.config_constants import CONF_THRESHOLD
 
 from detectron2.data import transforms as T
+
+from detectron2.modeling import BACKBONE_REGISTRY, Backbone
+import torch
+import timm
+
+@BACKBONE_REGISTRY.register()
+class EfficientNetBackbone(Backbone):
+    def __init__(self, cfg, input_shape):
+        super().__init__()
+        self.model = timm.create_model("tf_efficientnet_b5", features_only=True, pretrained=True)
+        self._out_features = ["0", "1", "2", "3", "4"]
+        self._out_feature_channels = {"0": 24, "1": 40, "2": 64, "3": 176, "4": 2048}
+        self._out_feature_strides = {"0": 4, "1": 8, "2": 16, "3": 32, "4": 64}
+
+    def forward(self, x):
+        features = self.model(x)
+        return {str(i): f for i, f in enumerate(features)}
+
+    def output_shape(self):
+        return {
+            name: torch.Size([self._out_feature_channels[name]])
+            for name in self._out_features
+        }
 
 def register_instances(data_type):
 
@@ -114,6 +139,11 @@ def configure_detectron():
     print(cfg.SOLVER)
 
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)
+    
+    cfg.MODEL.BACKBONE.NAME = "EfficientNetBackbone"
+    cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53]  # Adjust based on EfficientNet normalization
+    cfg.MODEL.PIXEL_STD = [58.395, 57.12, 57.375]
+
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     
@@ -167,11 +197,12 @@ def clear_data():
 
 
 if __name__ == "__main__":
+    
 
-    # # TODO: Run this only once when the registered metadata isnt the same as local
+    # TODO: Run this only once when the registered metadata isnt the same as local
 
-    # clear_data()
-    # preprocess_data_coco(TEM)
+    clear_data()
+    preprocess_data_coco(TEM)
     visualize_true_labels(COCO_TEST_TEM_ANNOTATION, data_type=TEM, set_type="test")
 
     # TRAIN STEPS:
