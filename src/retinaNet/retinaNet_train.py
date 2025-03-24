@@ -50,24 +50,31 @@ from detectron2.modeling import BACKBONE_REGISTRY, Backbone
 from detectron2.layers import ShapeSpec
 import torch
 import timm
+import torch.nn as nn
 
 @BACKBONE_REGISTRY.register()
 class EfficientNetBackbone(Backbone):
     def __init__(self, cfg, input_shape):
         super().__init__()
         self.model = timm.create_model("tf_efficientnet_b5", features_only=True, pretrained=True)
-        self._out_features = ["0", "1", "2", "3", "4"]
-        self._out_feature_channels = {"0": 24, "1": 40, "2": 64, "3": 176, "4": 2048}
-        self._out_feature_strides = {"0": 4, "1": 8, "2": 16, "3": 32, "4": 64}
+        
+        self._out_features = ["0", "1", "2", "3"]
+        self._out_feature_channels = {"0": 40, "1": 64, "2": 176, "3": 2048} 
+        self._out_feature_strides = {"0": 4, "1": 8, "2": 16, "3": 32}
+
+        self.proj_layers = nn.ModuleDict({
+            key: nn.Conv2d(self._out_feature_channels[key], 256, kernel_size=1)
+            for key in self._out_features
+        })
 
     def forward(self, x):
         features = self.model(x)
-        return {str(i): f for i, f in enumerate(features)}
+        return {str(i): self.proj_layers[str(i)](f) for i, f in enumerate(features)}
 
     def output_shape(self):
         return {
             name: ShapeSpec(
-                channels=self._out_feature_channels[name], 
+                channels=256, 
                 stride=self._out_feature_strides[name]
             )
             for name in self._out_features
