@@ -47,6 +47,7 @@ from retinaNet.constants.config_constants import CONF_THRESHOLD
 from detectron2.data import transforms as T
 
 from detectron2.modeling import BACKBONE_REGISTRY, Backbone
+from detectron2.modeling.backbone import ShapeSpec
 import torch
 import timm
 
@@ -65,7 +66,10 @@ class EfficientNetBackbone(Backbone):
 
     def output_shape(self):
         return {
-            name: torch.Size([self._out_feature_channels[name]])
+            name: ShapeSpec(
+                channels=self._out_feature_channels[name], 
+                stride=self._out_feature_strides[name]
+            )
             for name in self._out_features
         }
 
