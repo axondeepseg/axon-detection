@@ -136,7 +136,7 @@ def configure_detectron():
         T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
         # T.RandomBrightness(0.8, 1.2),
         # T.RandomContrast(0.8, 1.2),
-        T.RandomSaturation(1, 1.2),
+        T.RandomSaturation(1.3, 1.5),
         # T.RandomLighting(0.7),
     ]
 
