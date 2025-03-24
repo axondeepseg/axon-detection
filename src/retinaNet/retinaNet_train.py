@@ -153,7 +153,7 @@ def configure_detectron():
 
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 250  # (2*140)/8 = 60 epochs
+    cfg.SOLVER.MAX_ITER = 350
     # cfg.SOLVER.STEPS = [40, 80]  # no learning decay (lr remains stable)
     # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
@@ -166,10 +166,10 @@ def configure_detectron():
 
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)
     
-    cfg.MODEL.BACKBONE.NAME = "EfficientNetBackbone"
-    cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53] 
-    cfg.MODEL.PIXEL_STD = [58.395, 57.12, 57.375]
-    cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3", "4"]
+    # cfg.MODEL.BACKBONE.NAME = "EfficientNetBackbone"
+    # cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53] 
+    # cfg.MODEL.PIXEL_STD = [58.395, 57.12, 57.375]
+    # cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3", "4"]
 
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
