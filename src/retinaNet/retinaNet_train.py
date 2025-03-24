@@ -200,11 +200,7 @@ def configure_detectron():
     ]
 
     # TODO: Find right anchor boxes
-    
-    model = build_model(cfg)
-    input_shape = model.backbone.output_shape 
-    anchor_generator = build_anchor_generator(cfg, input_shape)
-    model.roi_heads.box_predictor.anchor_generator = anchor_generator
+    cfg.MODEL.ANCHOR_GENERATOR.NAME = "RotatedAnchorGenerator"
 
     print("\n -- model")
     print(cfg.MODEL)
