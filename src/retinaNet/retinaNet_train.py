@@ -130,7 +130,7 @@ def configure_detectron():
     cfg.MODEL.RETINANET.BBOX_REG_LOSS_TYPE = "smooth_l1"
     
     cfg.INPUT.RANDOM_FLIP = "horizontal"
-    # cfg.INPUT.CROP.ENABLED = True
+    cfg.INPUT.CROP.ENABLED = True
     # cfg.INPUT.CROP.SIZE = [0.8, 0.8]
 
     # TODO: Find right anchor boxes through kera script
