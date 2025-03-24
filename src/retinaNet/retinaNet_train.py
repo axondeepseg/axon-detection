@@ -290,7 +290,7 @@ if __name__ == "__main__":
         print("Training stopped due to:" + str(e))
 
     try:
-        final_test_metrics = model_trainer.test()
+        final_test_metrics = model_trainer.test(model_trainer.cfg, model_trainer.model)
         run.log(final_test_metrics)
     except Exception as e:
         print("Validation run stopped due to:" + str(e))
