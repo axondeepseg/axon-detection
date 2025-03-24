@@ -11,3 +11,4 @@ scikit-learn
 wandb
 torch==2.2.2
 torchvision==0.17.2
+timm
