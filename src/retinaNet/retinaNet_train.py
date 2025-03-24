@@ -151,9 +151,9 @@ def configure_detectron():
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)
     
     cfg.MODEL.BACKBONE.NAME = "EfficientNetBackbone"
-    cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53]  # Adjust based on EfficientNet normalization
+    cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53] 
     cfg.MODEL.PIXEL_STD = [58.395, 57.12, 57.375]
-    cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3", "4"]
+    cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3"]
 
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
