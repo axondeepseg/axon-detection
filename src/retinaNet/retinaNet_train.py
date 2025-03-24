@@ -10,7 +10,6 @@ from detectron2.utils.logger import setup_logger
 from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import DefaultPredictor
 
-from detectron2.utils.analysis import analyze_scale
 
 from preprocessing import preprocess_data_coco
 from utils import clear_directories_coco
@@ -201,9 +200,9 @@ if __name__ == "__main__":
 
     # TODO: Run this only once when the registered metadata isnt the same as local
 
-    clear_data()
-    preprocess_data_coco(TEM)
-    visualize_true_labels(COCO_TEST_TEM_ANNOTATION, data_type=TEM, set_type="test")
+    # clear_data()
+    # preprocess_data_coco(TEM)
+    # visualize_true_labels(COCO_TEST_TEM_ANNOTATION, data_type=TEM, set_type="test")
 
     # TRAIN STEPS:
 
