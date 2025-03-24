@@ -130,16 +130,10 @@ def configure_detectron():
     cfg.MODEL.RETINANET.BBOX_REG_LOSS_TYPE = "smooth_l1"
 
     # TODO: Find right anchor boxes through kera script
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [
-        [16, 24, 32],  # P3 level
-        [32, 48, 64],  # P4 level
-        [64, 96, 128],  # P5 level
-        [128, 192, 256],  # P6 level
-        [256, 384, 512]  # P7 level
-    ]
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[16], [32], [64], [128], [256]]
 
     # This makes boxes ++ faster, but no boxes shown
-    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.584, 1.484, 1.901]]
+    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.584, 1.484, 1.901]]
 
     print("\n -- model")
     print(cfg.MODEL)
