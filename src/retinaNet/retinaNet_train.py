@@ -59,12 +59,12 @@ class EfficientNetBackbone(Backbone):
         self.model = timm.create_model("tf_efficientnet_b5", features_only=True, pretrained=True)
         
         self._out_features = ["0", "1", "2", "3", "4"]
-        self._out_feature_channels = {"0": 40, "1": 64, "2": 176, "3": 2048, "4": 3072} 
+        self._out_feature_channels = {"0": 24, "1": 40, "2": 64, "3": 176, "4": 512 }
         self._out_feature_strides = {"0": 4, "1": 8, "2": 16, "3": 32, "4": 64}
 
         self.proj_layers = nn.ModuleDict({
-            key: nn.Conv2d(self._out_feature_channels[key], 256, kernel_size=1)
-            for key in self._out_features
+            name: nn.Conv2d(in_channels, 256, kernel_size=1) 
+            for name, in_channels in self._out_feature_channels.items()
         })
 
     def forward(self, x):
