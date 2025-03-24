@@ -231,7 +231,7 @@ class Trainer(DefaultTrainer):
                         blue = int(255 * scores[i])
                         color = (0, blue, green)
 
-                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), thickness=7)
+                        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), thickness=9)
 
                         label = f"{scores[i]:.2f}"
                         font_scale = 0.5
