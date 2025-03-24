@@ -43,6 +43,7 @@ from retinaNet.constants.wanb_config_constants import (
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
 
+from detectron2.data import transforms as T
 
 def register_instances(data_type):
 
@@ -129,9 +130,16 @@ def configure_detectron():
     
     cfg.MODEL.RETINANET.BBOX_REG_LOSS_TYPE = "smooth_l1"
     
-    cfg.INPUT.RANDOM_FLIP = "horizontal"
-    cfg.INPUT.CROP.ENABLED = True
-    cfg.INPUT.CROP.SIZE = [0.7, 0.7]
+    # cfg.INPUT.RANDOM_FLIP = "horizontal"
+    
+    cfg.INPUT.AUGMENTATIONS = [
+        T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
+        # T.RandomBrightness(0.8, 1.2),
+        # T.RandomContrast(0.8, 1.2),
+        # T.RandomSaturation(0.8, 1.2),
+        # T.RandomLighting(0.7),
+        T.RandomRotation(angle=[-10, 10]),
+    ]
 
     # TODO: Find right anchor boxes through kera script
     # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[16], [32], [64], [128], [256]]
