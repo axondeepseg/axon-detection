@@ -47,7 +47,7 @@ from retinaNet.constants.config_constants import CONF_THRESHOLD
 from detectron2.data import transforms as T
 
 from detectron2.modeling import BACKBONE_REGISTRY, Backbone
-from detectron2.modeling.backbone import ShapeSpec
+from detectron2.layers import ShapeSpec
 import torch
 import timm
 
