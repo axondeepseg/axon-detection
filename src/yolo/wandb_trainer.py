@@ -90,7 +90,7 @@ class WandbTrainer:
                 for box in result.boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     confidence = box.conf[0]
-                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), thickness=9)
                     cv2.putText(img, f"{confidence:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
 
                 output_path = os.path.join(output_directory, os.path.basename(image_path))
