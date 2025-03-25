@@ -49,11 +49,11 @@ class Trainer(DefaultTrainer):
         wandb.log({"training_time": training_time})
 
         # Validation metrics
-        try:
-            final_val_metrics = self.evaluate()
-            print(f"\nVAL METRICS ARE: {final_val_metrics}")
-        except Exception as e:
-            print("Validation run stopped due to:" + str(e))
+        # try:
+        #     final_val_metrics = self.evaluate()
+        #     print(f"\nVAL METRICS ARE: {final_val_metrics}")
+        # except Exception as e:
+        #     print("Validation run stopped due to:" + str(e))
 
 
     def log_metrics(self, results, split_name="test"):
