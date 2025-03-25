@@ -242,7 +242,8 @@ def configure_detectron():
     print("Optimized Anchor Sizes:", detectron2_anchor_sizes)
 
     # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = detectron2_anchor_sizes
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[117.08, 140.72, 160], [232.32, 238.44, 250], [282.43, 306.74, 320], 
+        [392.46, 395.11, 410], [511.48, 574.64, 600]]
 
 
     print("\n -- model")
