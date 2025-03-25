@@ -199,7 +199,7 @@ def configure_detectron():
 
 
     # Update Detectron2 configuration
-    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[40, 50, 64], [80, 100, 128], [160, 200, 256], [320, 400, 512], [640, 730, 812]]
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[32, 50, 63.79683366298238], [64, 80.63494719327188, 120.59366732596476], [128, 161.26989438654377, 250.18733465192952], [256, 322.53978877308754, 406.37466930385904], [512, 645.0795775461751, 812.7493386077181]]
     # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [
     #     [0.5, 1.0, 2.0],           # No aspect ratios for small objects
     #     [0.5, 1.0, 2.0], # Aspect ratios for medium objects
