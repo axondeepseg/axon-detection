@@ -56,8 +56,6 @@ import timm
 import torch.nn as nn
 
 
-import numpy as np
-from sklearn.cluster import KMeans
 from detectron2.data import DatasetCatalog
 from retinaNet.constants.data_file_constants import COCO_TRAIN_REG_NAME
 
@@ -207,55 +205,17 @@ def configure_detectron():
 
     # TODO: Find right anchor boxes
 
-    def get_bbox_sizes(dataset_name):
-        """Extracts bounding box widths and heights from the dataset."""
-        dataset_dicts = DatasetCatalog.get(dataset_name)
-        bbox_sizes = []
 
-        for data in dataset_dicts:
-            for annotation in data["annotations"]:
-                x, y, w, h = annotation["bbox"]  # COCO format: [x_min, y_min, width, height]
-                bbox_sizes.append([w, h])
-
-        return np.array(bbox_sizes)
-
-    def kmeans_anchors(bbox_sizes, num_clusters):
-        """Runs K-Means clustering to find optimal anchor sizes."""
-        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
-        kmeans.fit(bbox_sizes)
-        
-        return np.sort(kmeans.cluster_centers_, axis=0)  # Sort anchors by size
-
-    # Extract bounding box sizes from dataset
-    bbox_sizes = get_bbox_sizes(COCO_TRAIN_REG_NAME)
-
-    # Optimize anchors using K-Means
-    num_anchors = 5  # Choose based on your model needs
-    optimized_anchors = kmeans_anchors(bbox_sizes, num_anchors)
-    
-    optimized_anchors = np.array(optimized_anchors).reshape((5, 1, 2))
-    optimized_anchors = optimized_anchors[:, 0, :]
-    optimized_anchor_sizes = [[size[0], size[1], size[0] * 1.2] for size in optimized_anchors]
-
-    print(optimized_anchors.shape)
-
-    print("Optimized Anchor Sizes:", optimized_anchor_sizes)
 
     # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [
-        [60, 80, 100],  # Empty list for small object sizes (no small anchors)
-        [60, 80, 100],   # Medium objects: moderate anchor sizes for better coverage
-        [128, 160, 256], # Larger anchors for medium to larger objects
-        [256, 320, 512], # Large objects
-        [512, 640, 1024] # Very large objects
-    ]
-    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [
-        [0.5, 1.0, 2.0],           # No aspect ratios for small objects
-        [0.5, 1.0, 2.0], # Aspect ratios for medium objects
-        [0.5, 1.0, 2.0], # Aspect ratios for large objects
-        [0.5, 1.0, 2.0], # Aspect ratios for very large objects
-        [0.5, 1.0, 2.0]  # Aspect ratios for large objects
-    ]
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[40, 50, 64], [80, 100, 128], [160, 200, 256], [320, 400, 512], [640, 730, 812]]
+    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [
+    #     [0.5, 1.0, 2.0],           # No aspect ratios for small objects
+    #     [0.5, 1.0, 2.0], # Aspect ratios for medium objects
+    #     [0.5, 1.0, 2.0], # Aspect ratios for large objects
+    #     [0.5, 1.0, 2.0], # Aspect ratios for very large objects
+    #     [0.5, 1.0, 2.0]  # Aspect ratios for large objects
+    # ]
 
 
     print("\n -- model")
