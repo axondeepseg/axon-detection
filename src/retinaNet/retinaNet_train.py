@@ -161,8 +161,6 @@ def configure_detectron():
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
     cfg.SOLVER.MAX_ITER = 350
-    # cfg.SOLVER.STEPS = [40, 80]  # no learning decay (lr remains stable)
-    # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
     cfg.SOLVER.WARMUP_ITERS = 50
     cfg.SOLVER.CLIP_GRADIENTS.ENABLED = True
@@ -172,12 +170,6 @@ def configure_detectron():
     print(cfg.SOLVER)
 
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)
-    
-    # cfg.MODEL.BACKBONE.NAME = "EfficientNetBackbone"
-    # cfg.MODEL.PIXEL_MEAN = [123.675, 116.28, 103.53] 
-    # cfg.MODEL.PIXEL_STD = [58.395, 57.12, 57.375]
-    # cfg.MODEL.RETINANET.IN_FEATURES = ["0", "1", "2", "3", "4"]
-
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     
@@ -207,7 +199,7 @@ def configure_detectron():
 
 
     # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[40, 50, 64], [80, 100, 128], [160, 200, 256], [320, 400, 512], [640, 730, 812]]
+    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[40, 50, 64], [80, 100, 128], [160, 200, 256], [320, 400, 512], [640, 730, 812]]
     # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [
     #     [0.5, 1.0, 2.0],           # No aspect ratios for small objects
     #     [0.5, 1.0, 2.0], # Aspect ratios for medium objects
