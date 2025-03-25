@@ -11,7 +11,6 @@ from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import DefaultPredictor
 
 
-from preprocessing import preprocess_data_coco
 from utils import clear_directories_coco
 
 from retinaNet.visualisations import visualize_true_labels
@@ -43,9 +42,6 @@ from retinaNet.constants.wanb_config_constants import (
     WANDB_RUN_NAME,
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
-
-from detectron2.modeling import build_model
-from detectron2.modeling.anchor_generator import build_anchor_generator
 
 from detectron2.data import transforms as T
 
@@ -191,16 +187,13 @@ def configure_detectron():
         # T.RandomResize([800, 1200]),
         T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
         T.RandomSaturation(1, 1.4),
-        # T.RandomLighting(0.7),
     ]
 
     # TODO: Find right anchor boxes
 
-
-
     # Update Detectron2 configuration
     # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[32, 50, 63.79683366298238], [64, 80.63494719327188, 120.59366732596476], [128, 161.26989438654377, 250.18733465192952], [256, 322.53978877308754, 406.37466930385904], [512, 645.0795775461751, 812.7493386077181]]
-    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.5, 1.0, 1.75]]
+    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.5, 1.0, 2.2]]
  
 
     print("\n -- model")
@@ -274,12 +267,8 @@ if __name__ == "__main__":
         }
     )
 
-    # TODO: remove when training
-    # cfg.MODEL.WEIGHTS = "retinaNet/output/model_final.pth"
-
     model_trainer = Trainer(cfg)
 
-    # TODO: Add when training
     model_trainer.resume_or_load(resume=False)
 
     try:
@@ -296,4 +285,3 @@ if __name__ == "__main__":
     model_path = "retinaNet/output/model_final.pth"
     torch.save(model_trainer.model.state_dict(), model_path)
 
-    model_trainer.visualize_predictions(COCO_TEST_TEM_IMAGES)
