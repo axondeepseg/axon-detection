@@ -190,7 +190,7 @@ def configure_detectron():
     cfg.INPUT.AUGMENTATIONS = [
         # T.RandomResize([800, 1200]),
         T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
-        T.RandomSaturation(1, 1.2),
+        T.RandomSaturation(1, 1.4),
         # T.RandomLighting(0.7),
     ]
 
