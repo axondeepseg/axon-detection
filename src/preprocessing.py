@@ -214,7 +214,6 @@ def preprocess_data_coco(
     6. Save the annotations and images in the appropriate COCO directories.
     """
 
-    print("preprocessing coco")
     if data_type == TEM:
         data_dir = TEM_DATA_NAME
         split_file = "data_tem_split.json"
@@ -380,7 +379,5 @@ if __name__ == "__main__":
     # else:
     #     print(f"{split_file} does not exist.")
 
-    # clear_directories_yolo()
     clear_directories_coco()
-    # preprocess_data_yolo()
     preprocess_data_coco(TEM)

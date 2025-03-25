@@ -13,7 +13,6 @@ from detectron2.engine import DefaultPredictor
 
 from utils import clear_directories_coco
 
-from retinaNet.visualisations import visualize_true_labels
 
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
@@ -72,8 +71,6 @@ class EfficientNetBackbone(Backbone):
 
     def forward(self, x):
         features = self.model(x)
-        
-        
         extra_feature = torch.nn.functional.adaptive_avg_pool2d(features[-1], output_size=(1, 1)) 
         features.append(extra_feature) 
         projected_features = {}
@@ -126,11 +123,6 @@ def register_instances(data_type):
     if (COCO_TEST_REG_NAME) not in list(MetadataCatalog):
         register_coco_instances(COCO_TEST_REG_NAME, {}, test_annotation, test_images)
 
-    print("List Meta")
-    print(list(MetadataCatalog))
-    print("get ids!!!")
-    # print(MetadataCatalog.get(COCO_VAL_REGISTRATION).dataset_id_to_contiguous_id)
-    print(MetadataCatalog.get(COCO_VAL_REG_NAME).get("thing_classes"))
 
 
 def reset_instances():
@@ -157,13 +149,10 @@ def configure_detectron():
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
     cfg.SOLVER.MAX_ITER = 350
-    cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
+    cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"
     cfg.SOLVER.WARMUP_ITERS = 50
     cfg.SOLVER.CLIP_GRADIENTS.ENABLED = True
     cfg.SOLVER.CLIP_GRADIENTS.CLIP_TYPE = "norm"
-
-    print("\n -- solver")
-    print(cfg.SOLVER)
 
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(CONFIG_FILE)
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 256
@@ -184,20 +173,12 @@ def configure_detectron():
     
     
     cfg.INPUT.AUGMENTATIONS = [
-        # T.RandomResize([800, 1200]),
         T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
         T.RandomSaturation(1, 1.4),
     ]
 
-    # TODO: Find right anchor boxes
-
-    # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[32, 50.31747359663594, 63.79683366298238], [64, 80.63494719327188, 101.59366732596476], [128, 161.26989438654377, 203.18733465192952], [256, 322.53978877308754, 406.37466930385904], [512, 645.0795775461751, 812.7493386077181]]
+    # Anchor ratios are customized according to dataset
     cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.5, 1.0, 2.2]]
-
-
-    print("\n -- model")
-    print(cfg.MODEL)
 
     cfg.OUTPUT_DIR = OUTPUT_DIR
     cfg.TEST.DETECTIONS_PER_IMAGE = 2000

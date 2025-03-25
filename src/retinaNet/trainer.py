@@ -10,13 +10,6 @@ from detectron2.engine import DefaultTrainer, hooks
 from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.data import build_detection_test_loader
 from detectron2.engine import DefaultPredictor
-from pycocotools.cocoeval import COCOeval
-
-try:
-    from detectron2.evaluation.fast_eval_api import COCOeval_opt
-except ImportError:
-    COCOeval_opt = COCOeval
-
 
 
 from detectron2.data.catalog import MetadataCatalog
@@ -24,7 +17,6 @@ from detectron2.data.catalog import MetadataCatalog
 from retinaNet.constants.data_file_constants import (
     COCO_TEST_REG_NAME,
     COCO_VAL_TEM_IMAGES,
-    # COCO_VAL_SEM_IMAGES,
     COCO_VAL_REG_NAME,
 )
 from retinaNet.constants.config_constants import CONF_THRESHOLD
@@ -56,56 +48,13 @@ class Trainer(DefaultTrainer):
         training_time = time.time() - self.start_time
         wandb.log({"training_time": training_time})
 
-        # VAL PREDICTION part for PRECISION / RECALL
+        # Validation metrics
+        try:
+            final_val_metrics = self.evaluate()
+            print(f"\nVAL METRICS ARE: {final_val_metrics}")
+        except Exception as e:
+            print("Validation run stopped due to:" + str(e))
 
-        # try:
-        #     final_val_metrics = self.evaluate()
-        #     print(f"\nVAL METRICS ARE: {final_val_metrics}")
-        # except Exception as e:
-        #     print("Validation run stopped due to:" + str(e))
-
-        # VAL PREDICTION visualization of result
-
-        # current_lr = self.optimizer.param_groups[0]["lr"]
-        # print(
-        #     f"\nLR at iteration={current_iteration} & epoch={current_iteration / 8}: {current_lr}"
-        # )
-
-        # self.predictor.model.load_state_dict(self.model.state_dict())
-
-        # image_paths = glob.glob(os.path.join(COCO_VAL_TEM_IMAGES, "*.png"))
-
-        # for image_path in image_paths:
-        #     print("image path")
-        #     print(image_path)
-        #     img = cv2.imread(image_path)
-        #     outputs = self.predictor(img)
-        #     instances = outputs["instances"].to("cpu")
-
-        #     # confidence scores
-        #     scores = instances.scores.numpy()
-        #     boxes = instances.pred_boxes.tensor.numpy()
-
-        #     print(f"\n Boxes")
-        #     print(len(boxes))
-
-        #     for i, box in enumerate(boxes):
-        #         if scores[i] > CONF_THRESHOLD:
-        #             x1, y1, x2, y2 = map(int, box)
-        #             cv2.rectangle(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
-
-        #     output_path = os.path.join(
-        #         "output_predictions", "modified_params_" + os.path.basename(image_path)
-        #     )
-        #     cv2.imwrite(output_path, img)
-        #     wandb.log(
-        #         {
-        #             "Val Prediction": [
-        #                 wandb.Image(img, caption=os.path.basename(image_path))
-        #             ]
-        #         }
-        #     )
-        #     break
 
     def log_metrics(self, results, split_name="test"):
         """
@@ -114,8 +63,8 @@ class Trainer(DefaultTrainer):
 
         metrics = {
             f"{split_name}_AP_50:95": results["bbox"]["AP"],
-            # f"{split_name}_AP50": results["bbox"]["AP50"],
-            # f"{split_name}_AP75": results["bbox"]["AP75"],
+            f"{split_name}_AP50": results["bbox"]["AP50"],
+            f"{split_name}_AP75": results["bbox"]["AP75"],
         }
 
         wandb.log(metrics)
@@ -126,41 +75,6 @@ class Trainer(DefaultTrainer):
         )
         val_loader = build_detection_test_loader(self.cfg, COCO_VAL_REG_NAME)
         results = inference_on_dataset(self.model, val_loader, evaluator)
-
-        print("\n VAL RESULTS")
-        print(results)
-
-        # These steps were to debug the printing of recall
-
-        # try:
-        #     evaluator.evaluate()
-        # except Exception as e:
-        #     print(f"Evaluate error: {e}")
-
-        # try:
-        #     evaluator.accumulate()
-        # except Exception as e:
-        #     print(f"Accumulate error: {e}")
-
-        # try:
-        #     evaluator.summarize()
-        # except Exception as e:
-        #     print(f"Summarize error: {e}")
-
-        # print("=========================")
-        # print(evaluator.stats)
-        # print("=========================")
-
-        # print("Results Val")
-        # print(results)
-
-        # print("coco eval results")
-        # print(evaluator._results)
-
-        # coco_eval = DensePoseCocoEval(coco_gt, coco_dt, "densepose", dpEvalMode=DensePoseEvalMode.GPSM)
-        # coco_eval.evaluate()
-        # coco_eval.accumulate()
-        # coco_eval.summarize()
 
         self.log_metrics(results, "test")
         wandb.log(results)
@@ -190,15 +104,11 @@ class Trainer(DefaultTrainer):
 
         for image_path in image_paths:
             if image_path == "data-coco/tem/images/test/sub-nyuMouse07_sample-0004.png":
-                print("image path")
-                print(image_path)
 
                 img = cv2.imread(image_path)
                 if img is None:
                     print(f"Failed to load image: {image_path}")
                     continue
-
-                print("Predicting on image:", image_path)
 
                 start_time = time.time()
                 outputs = self.predictor(img)
@@ -268,8 +178,7 @@ class Trainer(DefaultTrainer):
         )
         self.log_metrics(test_results, "test")
 
-        print("\ntest results")
-        print(test_results)
+        print(f"\nTest metrics: {test_results}")
 
         wandb.log(test_results)
         return test_results
