@@ -199,15 +199,9 @@ def configure_detectron():
 
 
     # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[32, 50, 63.79683366298238], [64, 80.63494719327188, 120.59366732596476], [128, 161.26989438654377, 250.18733465192952], [256, 322.53978877308754, 406.37466930385904], [512, 645.0795775461751, 812.7493386077181]]
-    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [
-    #     [0.5, 1.0, 2.0],           # No aspect ratios for small objects
-    #     [0.5, 1.0, 2.0], # Aspect ratios for medium objects
-    #     [0.5, 1.0, 2.0], # Aspect ratios for large objects
-    #     [0.5, 1.0, 2.0], # Aspect ratios for very large objects
-    #     [0.5, 1.0, 2.0]  # Aspect ratios for large objects
-    # ]
-
+    # cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[32, 50, 63.79683366298238], [64, 80.63494719327188, 120.59366732596476], [128, 161.26989438654377, 250.18733465192952], [256, 322.53978877308754, 406.37466930385904], [512, 645.0795775461751, 812.7493386077181]]
+    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.5, 1.0, 1.75]]
+ 
 
     print("\n -- model")
     print(cfg.MODEL)
@@ -237,8 +231,6 @@ if __name__ == "__main__":
     # clear_data()
     # preprocess_data_coco(TEM)
     # visualize_true_labels(COCO_TEST_TEM_ANNOTATION, data_type=TEM, set_type="test")
-
-    # TRAIN STEPS:
 
     setup_logger()
     reset_instances()
