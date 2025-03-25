@@ -232,18 +232,17 @@ def configure_detectron():
     # Optimize anchors using K-Means
     num_anchors = 5  # Choose based on your model needs
     optimized_anchors = kmeans_anchors(bbox_sizes, num_anchors)
-    optimized_anchors = np.array(optimized_anchors).reshape((5, 1, 2))
-    optimized_anchors = np.repeat(optimized_anchors, 3, axis=1)
-    detectron2_anchor_sizes = optimized_anchors.tolist()
     
+    optimized_anchors = np.array(optimized_anchors).reshape((5, 1, 2))
+    optimized_anchors = optimized_anchors[:, 0, :]
+    optimized_anchor_sizes = [[size[0], size[1], size[0] * 1.2] for size in optimized_anchors]
+
     print(optimized_anchors.shape)
 
-
-    print("Optimized Anchor Sizes:", detectron2_anchor_sizes)
+    print("Optimized Anchor Sizes:", optimized_anchor_sizes)
 
     # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [[117.08, 140.72, 160], [232.32, 238.44, 250], [282.43, 306.74, 320], 
-        [392.46, 395.11, 410], [511.48, 574.64, 600]]
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = optimized_anchor_sizes
 
 
     print("\n -- model")
