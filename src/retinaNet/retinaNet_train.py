@@ -243,7 +243,7 @@ def configure_detectron():
 
     # Update Detectron2 configuration
     cfg.MODEL.ANCHOR_GENERATOR.SIZES = optimized_anchor_sizes
-    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.2, 0.5, 1.0, 2.0, 3.0]] * len(cfg.MODEL.ANCHOR_GENERATOR.SIZES)
+    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.2, 0.5, 1.0, 2.0, 3.0]] 
 
 
     print("\n -- model")
