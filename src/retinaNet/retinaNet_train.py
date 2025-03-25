@@ -230,8 +230,10 @@ def configure_detectron():
     bbox_sizes = get_bbox_sizes(COCO_TRAIN_REG_NAME)
 
     # Optimize anchors using K-Means
-    num_anchors = 9  # Choose based on your model needs
+    num_anchors = 5  # Choose based on your model needs
     optimized_anchors = kmeans_anchors(bbox_sizes, num_anchors)
+    
+    print(optimized_anchors.shape)
 
     # Convert anchors to Detectron2 format
     detectron2_anchor_sizes = optimized_anchors.reshape((5, num_anchors // 5, 2)).tolist()
