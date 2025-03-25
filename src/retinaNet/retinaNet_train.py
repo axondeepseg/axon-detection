@@ -249,7 +249,7 @@ def configure_detectron():
         [256, 320, 512],                       # Large objects: increase coverage with larger sizes
         [512, 640, 1024]                       # Very large objects: extend with bigger anchors
     ]
-    cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.2, 0.5, 1.0, 2.0, 3.0]] 
+    # cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.2, 0.5, 1.0, 2.0, 3.0]] 
 
 
     print("\n -- model")
