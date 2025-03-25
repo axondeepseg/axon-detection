@@ -219,7 +219,7 @@ def configure_detectron():
 
         return np.array(bbox_sizes)
 
-    def kmeans_anchors(bbox_sizes, num_clusters=9):
+    def kmeans_anchors(bbox_sizes, num_clusters):
         """Runs K-Means clustering to find optimal anchor sizes."""
         kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
         kmeans.fit(bbox_sizes)
@@ -232,11 +232,12 @@ def configure_detectron():
     # Optimize anchors using K-Means
     num_anchors = 5  # Choose based on your model needs
     optimized_anchors = kmeans_anchors(bbox_sizes, num_anchors)
+    optimized_anchors = np.array(optimized_anchors).reshape((5, 1, 2))
+    optimized_anchors = np.repeat(optimized_anchors, 3, axis=1)
+    detectron2_anchor_sizes = optimized_anchors.tolist()
     
     print(optimized_anchors.shape)
 
-    # Convert anchors to Detectron2 format
-    detectron2_anchor_sizes = optimized_anchors.reshape((5, num_anchors // 5, 2)).tolist()
 
     print("Optimized Anchor Sizes:", detectron2_anchor_sizes)
 
