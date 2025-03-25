@@ -200,7 +200,13 @@ def configure_detectron():
     ]
 
     # TODO: Find right anchor boxes
-    cfg.MODEL.ANCHOR_GENERATOR.NAME = "RotatedAnchorGenerator"
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [
+        [16, 24, 32],   # Smallest feature map level
+        [48, 64, 96],   # Second level
+        [128, 192, 256],  # Third level
+        [384, 512, 640],  # Fourth level
+        [768, 1024, 1280],  # Largest feature map level
+    ]
 
     print("\n -- model")
     print(cfg.MODEL)
