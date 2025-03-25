@@ -194,13 +194,12 @@ def configure_detectron():
     
     cfg.MODEL.RETINANET.BBOX_REG_LOSS_TYPE = "smooth_l1"
     
-    # cfg.INPUT.RANDOM_FLIP = "horizontal"
     
     cfg.INPUT.AUGMENTATIONS = [
-        T.RandomResize([800, 1200]),
+        # T.RandomResize([800, 1200]),
         T.RandomFlip(prob=0.5, horizontal=True, vertical=False),
         T.RandomSaturation(1, 1.2),
-        T.RandomLighting(0.7),
+        # T.RandomLighting(0.7),
     ]
 
     # TODO: Find right anchor boxes
