@@ -242,7 +242,13 @@ def configure_detectron():
     print("Optimized Anchor Sizes:", optimized_anchor_sizes)
 
     # Update Detectron2 configuration
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = optimized_anchor_sizes
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [
+        [16, 24, 32],                          # Small objects: reduce sizes for better coverage of small objects
+        [64, 80, 128],                         # Medium objects: increased coverage with moderate sizes
+        [128, 160, 256],                       # Larger anchors for medium to large objects
+        [256, 320, 512],                       # Large objects: increase coverage with larger sizes
+        [512, 640, 1024]                       # Very large objects: extend with bigger anchors
+    ]
     cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [[0.2, 0.5, 1.0, 2.0, 3.0]] 
 
 
