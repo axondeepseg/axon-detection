@@ -244,7 +244,7 @@ def configure_detectron():
     # Update Detectron2 configuration
     cfg.MODEL.ANCHOR_GENERATOR.SIZES = [
         [60, 80, 100],  # Empty list for small object sizes (no small anchors)
-        [64, 96, 128],   # Medium objects: moderate anchor sizes for better coverage
+        [60, 80, 100],   # Medium objects: moderate anchor sizes for better coverage
         [128, 160, 256], # Larger anchors for medium to larger objects
         [256, 320, 512], # Large objects
         [512, 640, 1024] # Very large objects
