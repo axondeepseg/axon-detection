@@ -55,6 +55,12 @@ import torch
 import timm
 import torch.nn as nn
 
+
+import numpy as np
+from sklearn.cluster import KMeans
+from detectron2.data import DatasetCatalog
+from retinaNet.constants.data_file_constants import COCO_TRAIN_REG_NAME
+
 @BACKBONE_REGISTRY.register()
 class EfficientNetBackbone(Backbone):
     def __init__(self, cfg, input_shape):
@@ -156,7 +162,7 @@ def configure_detectron():
 
     cfg.SOLVER.IMS_PER_BATCH = 1
     cfg.SOLVER.BASE_LR = 0.001
-    cfg.SOLVER.MAX_ITER = 400
+    cfg.SOLVER.MAX_ITER = 350
     # cfg.SOLVER.STEPS = [40, 80]  # no learning decay (lr remains stable)
     # cfg.SOLVER.GAMMA = 0.1  # decay factor for lr
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"  # scheduler for early warmup
@@ -200,13 +206,41 @@ def configure_detectron():
     ]
 
     # TODO: Find right anchor boxes
-    cfg.MODEL.ANCHOR_GENERATOR.SIZES = [
-        [16, 24, 32],   # Smallest feature map level
-        [48, 64, 96],   # Second level
-        [128, 192, 256],  # Third level
-        [384, 512, 640],  # Fourth level
-        [768, 1024, 1280],  # Largest feature map level
-    ]
+
+    def get_bbox_sizes(dataset_name):
+        """Extracts bounding box widths and heights from the dataset."""
+        dataset_dicts = DatasetCatalog.get(dataset_name)
+        bbox_sizes = []
+
+        for data in dataset_dicts:
+            for annotation in data["annotations"]:
+                x, y, w, h = annotation["bbox"]  # COCO format: [x_min, y_min, width, height]
+                bbox_sizes.append([w, h])
+
+        return np.array(bbox_sizes)
+
+    def kmeans_anchors(bbox_sizes, num_clusters=9):
+        """Runs K-Means clustering to find optimal anchor sizes."""
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
+        kmeans.fit(bbox_sizes)
+        
+        return np.sort(kmeans.cluster_centers_, axis=0)  # Sort anchors by size
+
+    # Extract bounding box sizes from dataset
+    bbox_sizes = get_bbox_sizes(COCO_TRAIN_REG_NAME)
+
+    # Optimize anchors using K-Means
+    num_anchors = 9  # Choose based on your model needs
+    optimized_anchors = kmeans_anchors(bbox_sizes, num_anchors)
+
+    # Convert anchors to Detectron2 format
+    detectron2_anchor_sizes = optimized_anchors.reshape((5, num_anchors // 5, 2)).tolist()
+
+    print("Optimized Anchor Sizes:", detectron2_anchor_sizes)
+
+    # Update Detectron2 configuration
+    cfg.MODEL.ANCHOR_GENERATOR.SIZES = detectron2_anchor_sizes
+
 
     print("\n -- model")
     print(cfg.MODEL)
