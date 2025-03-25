@@ -71,7 +71,7 @@ class WandbTrainer:
         wandb.log({"inference_time": inference_time})
         print(f"Inference time on test set: {inference_time:.2f} seconds")
 
-    def visualize_predictions(self, test_dir, conf=0.6):
+    def visualize_predictions(self, test_dir, conf=0.65):
         output_directory = 'output_predictions'
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
