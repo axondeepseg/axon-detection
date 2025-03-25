@@ -250,11 +250,11 @@ def configure_detectron():
         [512, 640, 1024] # Very large objects
     ]
     cfg.MODEL.ANCHOR_GENERATOR.ASPECT_RATIOS = [
-        [0.5, 1.0, 2.0, 0.3], 
-        [0.5, 1.0, 2.0, 0.3],
-        [0.5, 1.0, 2.0, 0.3],
-        [0.5, 1.0, 2.0, 0.3],
-        [0.5, 1.0, 2.0, 0.3]
+        [0.5, 1.0, 2.0],           # No aspect ratios for small objects
+        [0.5, 1.0, 2.0], # Aspect ratios for medium objects
+        [0.5, 1.0, 2.0], # Aspect ratios for large objects
+        [0.5, 1.0, 2.0], # Aspect ratios for very large objects
+        [0.5, 1.0, 2.0]  # Aspect ratios for large objects
     ]
 
 
